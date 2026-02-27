@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
-using FluentAssertions;
 using System.Threading;
 using Conductor.Domain.Models;
+using FluentAssertions;
 using RestSharp;
 using Xunit;
 
@@ -24,19 +24,19 @@ namespace Conductor.IntegrationTests.Cluster
         [Fact]
         public void should_notify_peers_of_new_definitions()
         {
-            var definition = new Definition()
+            var definition = new Definition
             {
                 Id = Guid.NewGuid().ToString(),
-                Steps = new List<Step>()
+                Steps = new List<Step>
                 {
-                    new Step()
+                    new Step
                     {
                         Id = "step1",
                         StepType = "EmitLog"
                     }
                 }
             };
-            
+
             var registerRequest = new RestRequest(@"/definition", Method.POST);
             registerRequest.AddJsonBody(definition);
             var registerResponse = _client1.Execute(registerRequest);

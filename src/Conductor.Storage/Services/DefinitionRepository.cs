@@ -1,24 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Conductor.Domain.Interfaces;
 using Conductor.Domain.Models;
 using Conductor.Storage.Models;
-using MongoDB.Bson.Serialization;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Linq;
 
 namespace Conductor.Storage.Services
 {
     public class DefinitionRepository : IDefinitionRepository
     {
+        private static bool indexesCreated;
         private readonly IMongoDatabase _database;
-
-        private IMongoCollection<StoredDefinition> _collection => _database.GetCollection<StoredDefinition>("Definitions");
 
         static DefinitionRepository()
         {
@@ -31,6 +25,9 @@ namespace Conductor.Storage.Services
             _database = database;
             CreateIndexes(_collection);
         }
+
+        private IMongoCollection<StoredDefinition> _collection =>
+            _database.GetCollection<StoredDefinition>("Definitions");
 
         public Definition Find(string workflowId)
         {
@@ -45,7 +42,7 @@ namespace Conductor.Storage.Services
             var result = _collection.Find(x => x.ExternalId == workflowId && x.Version == version);
             if (!result.Any())
                 return null;
-            
+
             var json = result.First().Definition.ToJson();
             return JsonConvert.DeserializeObject<Definition>(json);
         }
@@ -77,16 +74,17 @@ namespace Conductor.Storage.Services
 
             if (_collection.AsQueryable().Any(x => x.ExternalId == definition.Id && x.Version == definition.Version))
             {
-                _collection.ReplaceOne(x => x.ExternalId == definition.Id && x.Version == definition.Version, new StoredDefinition()
-                {
-                    ExternalId = definition.Id,
-                    Version = definition.Version,
-                    Definition = doc
-                });
+                _collection.ReplaceOne(x => x.ExternalId == definition.Id && x.Version == definition.Version,
+                    new StoredDefinition
+                    {
+                        ExternalId = definition.Id,
+                        Version = definition.Version,
+                        Definition = doc
+                    });
                 return;
             }
 
-            _collection.InsertOne(new StoredDefinition()
+            _collection.InsertOne(new StoredDefinition
             {
                 ExternalId = definition.Id,
                 Version = definition.Version,
@@ -94,13 +92,15 @@ namespace Conductor.Storage.Services
             });
         }
 
-        static bool indexesCreated = false;
-        static void CreateIndexes(IMongoCollection<StoredDefinition> collection)
+        private static void CreateIndexes(IMongoCollection<StoredDefinition> collection)
         {
             if (!indexesCreated)
             {
-                collection.Indexes.CreateOne(Builders<StoredDefinition>.IndexKeys.Ascending(x => x.ExternalId).Ascending(x => x.Version), new CreateIndexOptions() { Background = true, Name = "unq_definition_id_version", Unique = true });
-                collection.Indexes.CreateOne(Builders<StoredDefinition>.IndexKeys.Ascending(x => x.ExternalId), new CreateIndexOptions() { Background = true, Name = "idx_definition_id" });
+                collection.Indexes.CreateOne(
+                    Builders<StoredDefinition>.IndexKeys.Ascending(x => x.ExternalId).Ascending(x => x.Version),
+                    new CreateIndexOptions { Background = true, Name = "unq_definition_id_version", Unique = true });
+                collection.Indexes.CreateOne(Builders<StoredDefinition>.IndexKeys.Ascending(x => x.ExternalId),
+                    new CreateIndexOptions { Background = true, Name = "idx_definition_id" });
                 indexesCreated = true;
             }
         }

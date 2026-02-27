@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
-using System.Text;
-using Newtonsoft.Json.Linq;
 using WorkflowCore.Models;
 
 namespace Conductor.Domain.Models
@@ -34,6 +32,5 @@ namespace Conductor.Domain.Models
         public Dictionary<string, string> Outputs { get; set; } = new Dictionary<string, string>();
 
         public Dictionary<string, string> SelectNextStep { get; set; } = new Dictionary<string, string>();
-        
     }
 }

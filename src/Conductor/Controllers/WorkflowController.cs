@@ -1,17 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
+﻿using System.Dynamic;
 using System.Threading.Tasks;
 using AutoMapper;
 using Conductor.Auth;
-using Conductor.Domain.Interfaces;
-using Conductor.Domain.Models;
 using Conductor.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
 using WorkflowCore.Interface;
 
 namespace Conductor.Controllers
@@ -21,11 +14,12 @@ namespace Conductor.Controllers
     [Authorize]
     public class WorkflowController : ControllerBase
     {
-        private readonly IWorkflowController _workflowController;
-        private readonly IPersistenceProvider _persistenceProvider;
         private readonly IMapper _mapper;
+        private readonly IPersistenceProvider _persistenceProvider;
+        private readonly IWorkflowController _workflowController;
 
-        public WorkflowController(IWorkflowController workflowController, IPersistenceProvider persistenceProvider, IMapper mapper)
+        public WorkflowController(IWorkflowController workflowController, IPersistenceProvider persistenceProvider,
+            IMapper mapper)
         {
             _workflowController = workflowController;
             _persistenceProvider = persistenceProvider;
@@ -85,7 +79,5 @@ namespace Conductor.Controllers
             else
                 Response.StatusCode = 400;
         }
-
-
     }
 }

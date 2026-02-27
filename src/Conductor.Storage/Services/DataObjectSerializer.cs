@@ -1,22 +1,17 @@
 ﻿using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
-using MongoDB.Bson;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Dynamic;
 
 namespace Conductor.Storage.Services
 {
     public class DataObjectSerializer : SerializerBase<object>
     {
-        private static JsonSerializerSettings SerializerSettings = new JsonSerializerSettings()
+        private static readonly JsonSerializerSettings SerializerSettings = new JsonSerializerSettings
         {
-            TypeNameHandling = TypeNameHandling.None,
+            TypeNameHandling = TypeNameHandling.None
         };
-        
+
         public override object Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
         {
             var result = BsonSerializer.Deserialize<string>(context.Reader);
@@ -33,10 +28,8 @@ namespace Conductor.Storage.Services
         {
             var str = JsonConvert.SerializeObject(value, SerializerSettings);
             //var doc = BsonDocument.Parse(str);
-            MongoDB.Bson.Serialization.
-            
+
             BsonSerializer.Serialize(context.Writer, str);
         }
-
     }
 }

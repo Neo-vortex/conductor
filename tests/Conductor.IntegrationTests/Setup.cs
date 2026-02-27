@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text;
-using System.Threading;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Services;
 
@@ -10,7 +6,8 @@ namespace Conductor.IntegrationTests
 {
     public class Setup : IDisposable
     {
-        ICompositeService _svc;
+        private readonly ICompositeService _svc;
+
         public Setup()
         {
             Environment.CurrentDirectory = @"../../../";
@@ -25,14 +22,13 @@ namespace Conductor.IntegrationTests
                 .Build().Start();
         }
 
+        public string Server1 => "http://localhost:5101/api";
+        public string Server2 => "http://localhost:5102/api";
+
         public void Dispose()
         {
             _svc?.Stop();
             _svc?.Dispose();
         }
-
-        public string Server1 => "http://localhost:5101/api";
-        public string Server2 => "http://localhost:5102/api";
-
     }
 }

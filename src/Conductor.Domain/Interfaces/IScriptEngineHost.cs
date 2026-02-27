@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using Conductor.Domain.Models;
 
 namespace Conductor.Domain.Interfaces

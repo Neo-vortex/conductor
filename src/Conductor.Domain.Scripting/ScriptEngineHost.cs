@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Conductor.Domain.Interfaces;
 using Conductor.Domain.Models;
 using Microsoft.Scripting;
@@ -42,6 +41,5 @@ namespace Conductor.Domain.Scripting
         {
             scope.Remove("__builtins__");
         }
-
     }
 }

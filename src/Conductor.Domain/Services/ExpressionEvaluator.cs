@@ -16,10 +16,10 @@ namespace Conductor.Domain.Services
         {
             _scriptHost = scriptHost;
         }
-        
+
         public object EvaluateExpression(string sourceExpr, object pData, IStepExecutionContext pContext)
         {
-            object resolvedValue = _scriptHost.EvaluateExpression(sourceExpr, new Dictionary<string, object>()
+            object resolvedValue = _scriptHost.EvaluateExpression(sourceExpr, new Dictionary<string, object>
             {
                 ["data"] = pData,
                 ["context"] = pContext,
@@ -32,8 +32,8 @@ namespace Conductor.Domain.Services
 
         public object EvaluateExpression(string sourceExpr, IDictionary<string, object> parameteters)
         {
-            var exprParams = new Dictionary<string, object>()
-            {                
+            var exprParams = new Dictionary<string, object>
+            {
                 ["environment"] = Environment.GetEnvironmentVariables(),
                 ["readFile"] = new Func<string, byte[]>(File.ReadAllBytes),
                 ["readText"] = new Func<string, Encoding, string>(File.ReadAllText)
@@ -47,7 +47,7 @@ namespace Conductor.Domain.Services
 
         public bool EvaluateOutcomeExpression(string sourceExpr, object data, object outcome)
         {
-            object resolvedValue = _scriptHost.EvaluateExpression(sourceExpr, new Dictionary<string, object>()
+            object resolvedValue = _scriptHost.EvaluateExpression(sourceExpr, new Dictionary<string, object>
             {
                 ["data"] = data,
                 ["outcome"] = outcome,
@@ -57,6 +57,5 @@ namespace Conductor.Domain.Services
             });
             return Convert.ToBoolean(resolvedValue);
         }
-
     }
 }

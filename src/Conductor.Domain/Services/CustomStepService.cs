@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using Conductor.Domain.Interfaces;
 using Conductor.Domain.Models;
 
@@ -8,7 +7,6 @@ namespace Conductor.Domain.Services
 {
     public class CustomStepService : ICustomStepService
     {
-
         private readonly IResourceRepository _resourceRepository;
         private readonly IScriptEngineHost _scriptHost;
 

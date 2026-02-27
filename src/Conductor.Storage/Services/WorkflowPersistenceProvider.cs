@@ -1,13 +1,10 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
-using MongoDB.Bson.Serialization.IdGenerators;
-using MongoDB.Bson.Serialization.Serializers;
-using MongoDB.Driver;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.IdGenerators;
+using MongoDB.Driver;
 using WorkflowCore.Exceptions;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
@@ -16,13 +13,8 @@ namespace Conductor.Storage.Services
 {
     public class WorkflowPersistenceProvider : IPersistenceProvider
     {
+        private static bool indexesCreated;
         private readonly IMongoDatabase _database;
-
-        public WorkflowPersistenceProvider(IMongoDatabase database)
-        {
-            _database = database;
-            CreateIndexes(this);
-        }
 
         static WorkflowPersistenceProvider()
         {
@@ -31,7 +23,7 @@ namespace Conductor.Storage.Services
                 x.MapIdProperty(y => y.Id)
                     .SetIdGenerator(new StringObjectIdGenerator());
                 x.MapProperty(y => y.Data);
-                    //.SetSerializer(new DataObjectSerializer());
+                //.SetSerializer(new DataObjectSerializer());
                 x.MapProperty(y => y.Description);
                 x.MapProperty(y => y.Reference);
                 x.MapProperty(y => y.WorkflowDefinitionId);
@@ -76,43 +68,22 @@ namespace Conductor.Storage.Services
             BsonClassMap.RegisterClassMap<ActivityResult>(x => x.AutoMap());
         }
 
-        static bool indexesCreated = false;
-        static void CreateIndexes(WorkflowPersistenceProvider instance)
+        public WorkflowPersistenceProvider(IMongoDatabase database)
         {
-            if (!indexesCreated)
-            {
-                instance.WorkflowInstances.Indexes.CreateOne(new CreateIndexModel<WorkflowInstance>(
-                    Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.NextExecution),
-                    new CreateIndexOptions { Background = true, Name = "idx_nextExec" }));
-
-                instance.Events.Indexes.CreateOne(new CreateIndexModel<Event>(
-                    Builders<Event>.IndexKeys
-                        .Ascending(x => x.EventName)
-                        .Ascending(x => x.EventKey)
-                        .Ascending(x => x.EventTime),
-                    new CreateIndexOptions { Background = true, Name = "idx_namekey" }));
-
-                instance.Events.Indexes.CreateOne(new CreateIndexModel<Event>(
-                    Builders<Event>.IndexKeys.Ascending(x => x.IsProcessed),
-                    new CreateIndexOptions { Background = true, Name = "idx_processed" }));
-
-                instance.EventSubscriptions.Indexes.CreateOne(new CreateIndexModel<EventSubscription>(
-                    Builders<EventSubscription>.IndexKeys
-                        .Ascending(x => x.EventName)
-                        .Ascending(x => x.EventKey),
-                    new CreateIndexOptions { Background = true, Name = "idx_namekey" }));
-
-                indexesCreated = true;
-            }
+            _database = database;
+            CreateIndexes(this);
         }
 
-        private IMongoCollection<WorkflowInstance> WorkflowInstances => _database.GetCollection<WorkflowInstance>("Workflows");
+        private IMongoCollection<WorkflowInstance> WorkflowInstances =>
+            _database.GetCollection<WorkflowInstance>("Workflows");
 
-        private IMongoCollection<EventSubscription> EventSubscriptions => _database.GetCollection<EventSubscription>("Subscriptions");
+        private IMongoCollection<EventSubscription> EventSubscriptions =>
+            _database.GetCollection<EventSubscription>("Subscriptions");
 
         private IMongoCollection<Event> Events => _database.GetCollection<Event>("Events");
 
-        private IMongoCollection<ExecutionError> ExecutionErrors => _database.GetCollection<ExecutionError>("ExecutionErrors");
+        private IMongoCollection<ExecutionError> ExecutionErrors =>
+            _database.GetCollection<ExecutionError>("ExecutionErrors");
 
         public async Task<string> CreateNewWorkflow(WorkflowInstance workflow)
         {
@@ -129,7 +100,7 @@ namespace Conductor.Storage.Services
         {
             var now = asAt.ToUniversalTime().Ticks;
             var query = WorkflowInstances
-                .Find(x => x.NextExecution.HasValue && (x.NextExecution <= now) && (x.Status == WorkflowStatus.Runnable))
+                .Find(x => x.NextExecution.HasValue && x.NextExecution <= now && x.Status == WorkflowStatus.Runnable)
                 .Project(x => x.Id);
 
             return await query.ToListAsync();
@@ -146,23 +117,21 @@ namespace Conductor.Storage.Services
 
         public async Task<IEnumerable<WorkflowInstance>> GetWorkflowInstances(IEnumerable<string> ids)
         {
-            if (ids == null)
-            {
-                return new List<WorkflowInstance>();
-            }
+            if (ids == null) return new List<WorkflowInstance>();
 
             var result = await WorkflowInstances.FindAsync(x => ids.Contains(x.Id));
             return await result.ToListAsync();
         }
 
-        public async Task<IEnumerable<WorkflowInstance>> GetWorkflowInstances(WorkflowStatus? status, string type, DateTime? createdFrom, DateTime? createdTo, int skip, int take)
+        public async Task<IEnumerable<WorkflowInstance>> GetWorkflowInstances(WorkflowStatus? status, string type,
+            DateTime? createdFrom, DateTime? createdTo, int skip, int take)
         {
             IQueryable<WorkflowInstance> result = WorkflowInstances.AsQueryable();
 
             if (status.HasValue)
                 result = result.Where(x => x.Status == status.Value);
 
-            if (!String.IsNullOrEmpty(type))
+            if (!string.IsNullOrEmpty(type))
                 result = result.Where(x => x.WorkflowDefinitionId == type);
 
             if (createdFrom.HasValue)
@@ -187,10 +156,10 @@ namespace Conductor.Storage.Services
 
         public void EnsureStoreExists()
         {
-
         }
 
-        public async Task<IEnumerable<EventSubscription>> GetSubscriptions(string eventName, string eventKey, DateTime asOf)
+        public async Task<IEnumerable<EventSubscription>> GetSubscriptions(string eventName, string eventKey,
+            DateTime asOf)
         {
             var query = EventSubscriptions
                 .Find(x => x.EventName == eventName && x.EventKey == eventKey && x.SubscribeAsOf <= asOf);
@@ -260,20 +229,24 @@ namespace Conductor.Storage.Services
         public async Task<EventSubscription> GetFirstOpenSubscription(string eventName, string eventKey, DateTime asOf)
         {
             var query = EventSubscriptions
-                .Find(x => x.EventName == eventName && x.EventKey == eventKey && x.SubscribeAsOf <= asOf && x.ExternalToken == null);
+                .Find(x => x.EventName == eventName && x.EventKey == eventKey && x.SubscribeAsOf <= asOf &&
+                           x.ExternalToken == null);
 
             return await query.FirstOrDefaultAsync();
         }
 
-        public async Task<bool> SetSubscriptionToken(string eventSubscriptionId, string token, string workerId, DateTime expiry)
+        public async Task<bool> SetSubscriptionToken(string eventSubscriptionId, string token, string workerId,
+            DateTime expiry)
         {
             var update = Builders<EventSubscription>.Update
                 .Set(x => x.ExternalToken, token)
                 .Set(x => x.ExternalTokenExpiry, expiry)
                 .Set(x => x.ExternalWorkerId, workerId);
 
-            var result = await EventSubscriptions.UpdateOneAsync(x => x.Id == eventSubscriptionId && x.ExternalToken == null, update);
-            return (result.ModifiedCount > 0);
+            var result =
+                await EventSubscriptions.UpdateOneAsync(x => x.Id == eventSubscriptionId && x.ExternalToken == null,
+                    update);
+            return result.ModifiedCount > 0;
         }
 
         public async Task ClearSubscriptionToken(string eventSubscriptionId, string token)
@@ -283,7 +256,37 @@ namespace Conductor.Storage.Services
                 .Set(x => x.ExternalTokenExpiry, null)
                 .Set(x => x.ExternalWorkerId, null);
 
-            await EventSubscriptions.UpdateOneAsync(x => x.Id == eventSubscriptionId && x.ExternalToken == token, update);
+            await EventSubscriptions.UpdateOneAsync(x => x.Id == eventSubscriptionId && x.ExternalToken == token,
+                update);
+        }
+
+        private static void CreateIndexes(WorkflowPersistenceProvider instance)
+        {
+            if (!indexesCreated)
+            {
+                instance.WorkflowInstances.Indexes.CreateOne(new CreateIndexModel<WorkflowInstance>(
+                    Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.NextExecution),
+                    new CreateIndexOptions { Background = true, Name = "idx_nextExec" }));
+
+                instance.Events.Indexes.CreateOne(new CreateIndexModel<Event>(
+                    Builders<Event>.IndexKeys
+                        .Ascending(x => x.EventName)
+                        .Ascending(x => x.EventKey)
+                        .Ascending(x => x.EventTime),
+                    new CreateIndexOptions { Background = true, Name = "idx_namekey" }));
+
+                instance.Events.Indexes.CreateOne(new CreateIndexModel<Event>(
+                    Builders<Event>.IndexKeys.Ascending(x => x.IsProcessed),
+                    new CreateIndexOptions { Background = true, Name = "idx_processed" }));
+
+                instance.EventSubscriptions.Indexes.CreateOne(new CreateIndexModel<EventSubscription>(
+                    Builders<EventSubscription>.IndexKeys
+                        .Ascending(x => x.EventName)
+                        .Ascending(x => x.EventKey),
+                    new CreateIndexOptions { Background = true, Name = "idx_namekey" }));
+
+                indexesCreated = true;
+            }
         }
     }
 }

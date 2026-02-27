@@ -1,12 +1,8 @@
-﻿using RestSharp;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using RestSharp.Deserializers;
+using RestSharp;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
 
@@ -14,7 +10,6 @@ namespace Conductor.Steps
 {
     public class HttpRequest : StepBodyAsync
     {
-
         public string BaseUrl { get; set; }
         public string Resource { get; set; }
 
@@ -31,25 +26,20 @@ namespace Conductor.Steps
         public int ResponseCode { get; set; }
         public dynamic ResponseBody { get; set; }
 
-        public async override Task<ExecutionResult> RunAsync(IStepExecutionContext context)
+        public override async Task<ExecutionResult> RunAsync(IStepExecutionContext context)
         {
             var client = new RestClient(BaseUrl);
             var request = new RestRequest(Resource, Method, Format);
 
             if (Headers != null)
-            {
                 foreach (var header in Headers)
                     request.AddHeader(header.Key, Convert.ToString(header.Value));
-            }
 
             if (Parameters != null)
-            {
                 foreach (var param in Parameters)
                     request.AddQueryParameter(param.Key, Convert.ToString(param.Value));
-            }
 
             if (Body != null)
-            {
                 switch (Format)
                 {
                     case DataFormat.Json:
@@ -58,16 +48,14 @@ namespace Conductor.Steps
                     case DataFormat.Xml:
                         request.AddXmlBody(Body);
                         break;
-
                 }
-            }
-            
+
             var response = await client.ExecuteTaskAsync<dynamic>(request);
             IsSuccessful = response.IsSuccessful;
 
             if (response.IsSuccessful)
             {
-                ResponseCode = (int) response.StatusCode;
+                ResponseCode = (int)response.StatusCode;
                 ResponseBody = response.Data;
             }
             else
@@ -76,8 +64,6 @@ namespace Conductor.Steps
             }
 
             return ExecutionResult.Next();
-
         }
     }
-    
 }

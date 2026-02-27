@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Conductor.Auth;
 using Conductor.Domain.Interfaces;
 using Conductor.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conductor.Controllers
@@ -46,7 +42,7 @@ namespace Conductor.Controllers
         {
             using (var sr = new StreamReader(Request.Body))
             {
-                var resource = new Resource()
+                var resource = new Resource
                 {
                     Name = name,
                     ContentType = Request.ContentType,
@@ -54,9 +50,8 @@ namespace Conductor.Controllers
                 };
                 _service.SaveStepResource(resource);
                 Response.StatusCode = 200;
-            }   
+            }
         }
-
     }
 
     public class StepResourceResult : IActionResult

@@ -1,17 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Conductor.Auth;
-using Conductor.Domain.Interfaces;
-using Conductor.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
 using WorkflowCore.Interface;
+using PendingActivity = Conductor.Models.PendingActivity;
 
 namespace Conductor.Controllers
 {
@@ -33,7 +27,7 @@ namespace Conductor.Controllers
         public async Task<IActionResult> Success(string token, [FromBody] object data)
         {
             await _activityService.SubmitActivitySuccess(token, data);
-            return Accepted();                
+            return Accepted();
         }
 
         [Authorize(Policy = Policies.Worker)]
@@ -52,8 +46,8 @@ namespace Conductor.Controllers
 
             if (result == null)
                 return NotFound();
-            
-            return Ok(_mapper.Map<Models.PendingActivity>(result));
+
+            return Ok(_mapper.Map<PendingActivity>(result));
         }
 
         [Authorize(Policy = Policies.Worker)]

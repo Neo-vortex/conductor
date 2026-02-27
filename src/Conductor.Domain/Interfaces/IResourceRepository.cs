@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Conductor.Domain.Models;
+﻿using Conductor.Domain.Models;
 
 namespace Conductor.Domain.Interfaces
 {
     public interface IResourceRepository
     {
-
         Resource Find(Bucket bucket, string name);
 
         Resource Find(Bucket bucket, string name, int version);

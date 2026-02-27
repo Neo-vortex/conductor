@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 using Conductor.Domain.Interfaces;
 using Conductor.Domain.Models;
 using Newtonsoft.Json.Linq;
@@ -18,12 +16,13 @@ namespace Conductor.Domain.Services
 {
     public class WorkflowLoader : IWorkflowLoader
     {
+        private readonly IExpressionEvaluator _expressionEvaluator;
         private readonly IWorkflowRegistry _registry;
         private readonly IScriptEngineHost _scriptHost;
-        private readonly IExpressionEvaluator _expressionEvaluator;
         private readonly ICustomStepService _stepService;
 
-        public WorkflowLoader(IWorkflowRegistry registry, IScriptEngineHost scriptHost, IExpressionEvaluator expressionEvaluator, ICustomStepService stepService)
+        public WorkflowLoader(IWorkflowRegistry registry, IScriptEngineHost scriptHost,
+            IExpressionEvaluator expressionEvaluator, ICustomStepService stepService)
         {
             _registry = registry;
             _scriptHost = scriptHost;
@@ -40,7 +39,7 @@ namespace Conductor.Domain.Services
         private WorkflowDefinition Convert(Definition source)
         {
             var dataType = typeof(ExpandoObject);
-            
+
             var result = new WorkflowDefinition
             {
                 Id = source.Id,
@@ -58,7 +57,7 @@ namespace Conductor.Domain.Services
         private WorkflowStepCollection ConvertSteps(ICollection<Step> source, Type dataType)
         {
             var result = new WorkflowStepCollection();
-            int i = 0;
+            var i = 0;
             var stack = new Stack<Step>(source.Reverse());
             var parents = new List<Step>();
             var compensatables = new List<Step>();
@@ -69,27 +68,27 @@ namespace Conductor.Domain.Services
 
                 var stepType = FindType(nextStep.StepType);
                 var containerType = typeof(WorkflowStep<>).MakeGenericType(stepType);
-                var targetStep = (containerType.GetConstructor(new Type[] { }).Invoke(null) as WorkflowStep);
+                var targetStep = containerType.GetConstructor(new Type[] { }).Invoke(null) as WorkflowStep;
                 if (stepType == typeof(CustomStep))
-                {
-                    targetStep.Inputs.Add(new ActionParameter<CustomStep, object>((pStep, pData) => pStep["__custom_step__"] = nextStep.StepType));
-                }
+                    targetStep.Inputs.Add(new ActionParameter<CustomStep, object>((pStep, pData) =>
+                        pStep["__custom_step__"] = nextStep.StepType));
 
                 if (nextStep.Saga)
                 {
                     containerType = typeof(SagaContainer<>).MakeGenericType(stepType);
-                    targetStep = (containerType.GetConstructor(new Type[] { }).Invoke(null) as WorkflowStep);
+                    targetStep = containerType.GetConstructor(new Type[] { }).Invoke(null) as WorkflowStep;
                 }
 
                 if (!string.IsNullOrEmpty(nextStep.CancelCondition))
                 {
-                    Func<ExpandoObject, bool> cancelFunc = (data) => _scriptHost.EvaluateExpression<bool>(nextStep.CancelCondition, new Dictionary<string, object>()
-                    {
-                        ["data"] = data,
-                        ["environment"] = Environment.GetEnvironmentVariables()
-                    });
+                    Func<ExpandoObject, bool> cancelFunc = data => _scriptHost.EvaluateExpression<bool>(
+                        nextStep.CancelCondition, new Dictionary<string, object>
+                        {
+                            ["data"] = data,
+                            ["environment"] = Environment.GetEnvironmentVariables()
+                        });
 
-                    Expression<Func<ExpandoObject, bool>> cancelExpr = (data) => cancelFunc(data);
+                    Expression<Func<ExpandoObject, bool>> cancelExpr = data => cancelFunc(data);
                     targetStep.CancelCondition = cancelExpr;
                 }
 
@@ -105,10 +104,8 @@ namespace Conductor.Domain.Services
                 if (nextStep.Do != null)
                 {
                     foreach (var branch in nextStep.Do)
-                    {
-                        foreach (var child in branch.Reverse<Step>())
-                            stack.Push(child);
-                    }
+                    foreach (var child in branch.Reverse<Step>())
+                        stack.Push(child);
 
                     if (nextStep.Do.Count > 0)
                         parents.Add(nextStep);
@@ -180,7 +177,7 @@ namespace Conductor.Domain.Services
             {
                 var stepProperty = stepType.GetProperty(input.Key);
 
-                if ((input.Value is IDictionary<string, object>) || (input.Value is IDictionary<object, object>))
+                if (input.Value is IDictionary<string, object> || input.Value is IDictionary<object, object>)
                 {
                     var acn = BuildObjectInputAction(input, stepProperty);
                     step.Inputs.Add(new ActionParameter<IStepBody, object>(acn));
@@ -196,14 +193,14 @@ namespace Conductor.Domain.Services
                 throw new ArgumentException($"Unknown type for input {input.Key} on {source.Id}");
             }
         }
-        
+
         private void AttachOutputs(Step source, Type dataType, Type stepType, WorkflowStep step)
         {
             foreach (var output in source.Outputs)
             {
                 Action<IStepBody, object> acn = (pStep, pData) =>
                 {
-                    object resolvedValue = _scriptHost.EvaluateExpression(output.Value, new Dictionary<string, object>()
+                    object resolvedValue = _scriptHost.EvaluateExpression(output.Value, new Dictionary<string, object>
                     {
                         ["step"] = pStep,
                         ["data"] = pData
@@ -214,22 +211,23 @@ namespace Conductor.Domain.Services
                 step.Outputs.Add(new ActionParameter<IStepBody, object>(acn));
             }
         }
-        
+
         private void AttachOutcomes(Step source, Type dataType, WorkflowStep step)
-        {            
+        {
             if (!string.IsNullOrEmpty(source.NextStepId))
-                step.Outcomes.Add(new ValueOutcome() { ExternalNextStepId = $"{source.NextStepId}" });
-            
+                step.Outcomes.Add(new ValueOutcome { ExternalNextStepId = $"{source.NextStepId}" });
+
             foreach (var nextStep in source.SelectNextStep)
             {
-                Expression<Func<ExpandoObject, object, bool>> sourceExpr = (data, outcome) => _expressionEvaluator.EvaluateOutcomeExpression(nextStep.Value, data, outcome);
+                Expression<Func<ExpandoObject, object, bool>> sourceExpr = (data, outcome) =>
+                    _expressionEvaluator.EvaluateOutcomeExpression(nextStep.Value, data, outcome);
                 step.Outcomes.Add(new ExpressionOutcome<ExpandoObject>(sourceExpr)
                 {
                     ExternalNextStepId = $"{nextStep.Key}"
                 });
             }
         }
-              
+
         private Type FindType(string name)
         {
             name = name.Trim();
@@ -249,10 +247,11 @@ namespace Conductor.Domain.Services
             throw new ArgumentException($"Step type {name} not found");
         }
 
-        private Action<IStepBody, object, IStepExecutionContext> BuildScalarInputAction(KeyValuePair<string, object> input, PropertyInfo stepProperty)
+        private Action<IStepBody, object, IStepExecutionContext> BuildScalarInputAction(
+            KeyValuePair<string, object> input, PropertyInfo stepProperty)
         {
             var sourceExpr = System.Convert.ToString(input.Value);
-            
+
             void acn(IStepBody pStep, object pData, IStepExecutionContext pContext)
             {
                 var resolvedValue = _expressionEvaluator.EvaluateExpression(sourceExpr, pData, pContext);
@@ -264,7 +263,9 @@ namespace Conductor.Domain.Services
                 }
 
                 if (stepProperty.PropertyType.IsEnum)
+                {
                     stepProperty.SetValue(pStep, Enum.Parse(stepProperty.PropertyType, (string)resolvedValue, true));
+                }
                 else
                 {
                     if (stepProperty.PropertyType == typeof(object))
@@ -273,19 +274,22 @@ namespace Conductor.Domain.Services
                     }
                     else
                     {
-                        if ((resolvedValue != null) && (stepProperty.PropertyType.IsAssignableFrom(resolvedValue.GetType())))
+                        if (resolvedValue != null &&
+                            stepProperty.PropertyType.IsAssignableFrom(resolvedValue.GetType()))
                             stepProperty.SetValue(pStep, resolvedValue);
                         else
-                            stepProperty.SetValue(pStep, System.Convert.ChangeType(resolvedValue, stepProperty.PropertyType));
-                    }                    
+                            stepProperty.SetValue(pStep,
+                                System.Convert.ChangeType(resolvedValue, stepProperty.PropertyType));
+                    }
                 }
             }
+
             return acn;
         }
 
-        
 
-        private Action<IStepBody, object, IStepExecutionContext> BuildObjectInputAction(KeyValuePair<string, object> input, PropertyInfo stepProperty)
+        private Action<IStepBody, object, IStepExecutionContext> BuildObjectInputAction(
+            KeyValuePair<string, object> input, PropertyInfo stepProperty)
         {
             void acn(IStepBody pStep, object pData, IStepExecutionContext pContext)
             {
@@ -297,15 +301,14 @@ namespace Conductor.Domain.Services
                 {
                     var subobj = stack.Pop();
                     foreach (var prop in subobj.Properties().ToList())
-                    {
                         if (prop.Name.StartsWith("@"))
                         {
                             var sourceExpr = prop.Value.ToString();
-                            var resolvedValue = _expressionEvaluator.EvaluateExpression(sourceExpr, pData, pContext);;
+                            var resolvedValue = _expressionEvaluator.EvaluateExpression(sourceExpr, pData, pContext);
+                            ;
                             subobj.Remove(prop.Name);
                             subobj.Add(prop.Name.TrimStart('@'), JToken.FromObject(resolvedValue));
                         }
-                    }
 
                     foreach (var child in subobj.Children<JObject>())
                         stack.Push(child);
@@ -313,8 +316,8 @@ namespace Conductor.Domain.Services
 
                 stepProperty.SetValue(pStep, destObj.ToObject<ExpandoObject>());
             }
+
             return acn;
         }
-        
     }
 }

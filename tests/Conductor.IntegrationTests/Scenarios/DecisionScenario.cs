@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Net;
-using FluentAssertions;
 using System.Threading;
-using System.Threading.Tasks;
 using Conductor.Domain.Models;
 using Conductor.Models;
+using FluentAssertions;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using Xunit;
@@ -16,7 +15,6 @@ namespace Conductor.IntegrationTests.Scenarios
     [Collection("Conductor")]
     public class DecisionScenario : Scenario
     {
-
         public DecisionScenario(Setup setup) : base(setup)
         {
         }
@@ -32,44 +30,44 @@ namespace Conductor.IntegrationTests.Scenarios
             add2inputs.Value1 = "data.Value1";
             add2inputs.Value2 = "data.Value3";
 
-            var definition = new Definition()
+            var definition = new Definition
             {
                 Id = Guid.NewGuid().ToString(),
-                Steps = new List<Step>()
+                Steps = new List<Step>
                 {
-                    new Step()
+                    new Step
                     {
                         Id = "Decide",
                         StepType = "Decide",
-                        SelectNextStep = new Dictionary<string, string>()
+                        SelectNextStep = new Dictionary<string, string>
                         {
                             ["A"] = "data.Flag == 1",
                             ["B"] = "data.Flag == 0"
                         }
                     },
-                    new Step()
+                    new Step
                     {
                         Id = "A",
                         StepType = "AddTest",
                         Inputs = add1inputs,
-                        Outputs = new Dictionary<string, string>()
+                        Outputs = new Dictionary<string, string>
                         {
                             ["Result"] = "step.Result"
                         }
                     },
-                    new Step()
+                    new Step
                     {
                         Id = "B",
                         StepType = "AddTest",
                         Inputs = add2inputs,
-                        Outputs = new Dictionary<string, string>()
+                        Outputs = new Dictionary<string, string>
                         {
                             ["Result"] = "step.Result"
                         }
                     }
                 }
             };
-            
+
             var registerRequest = new RestRequest(@"/definition", Method.POST);
             registerRequest.AddJsonBody(definition);
             var registerResponse = _client.Execute(registerRequest);
@@ -96,6 +94,5 @@ namespace Conductor.IntegrationTests.Scenarios
             var data2 = JObject.FromObject(instance2.Data);
             data2["Result"].Value<int>().Should().Be(6);
         }
-        
     }
 }

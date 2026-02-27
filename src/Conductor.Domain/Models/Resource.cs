@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Conductor.Domain.Models
+﻿namespace Conductor.Domain.Models
 {
     public class Resource
     {
@@ -17,8 +13,13 @@ namespace Conductor.Domain.Models
         public string Content { get; set; }
 
         public byte[] CompiledContent { get; set; }
-
     }
 
-    public enum Bucket { Lambda, Step, Protobuf, File };
+    public enum Bucket
+    {
+        Lambda,
+        Step,
+        Protobuf,
+        File
+    }
 }

@@ -1,23 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 using Conductor.Domain.Interfaces;
 using Conductor.Domain.Models;
 using Conductor.Storage.Models;
-using MongoDB.Bson.Serialization;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Conductor.Storage.Services
 {
     public class ResourceRepository : IResourceRepository
     {
+        private static bool indexesCreated;
         private readonly IMongoDatabase _database;
-
-        private IMongoCollection<StoredResource> _collection => _database.GetCollection<StoredResource>("Resources");
 
         static ResourceRepository()
         {
@@ -28,6 +22,8 @@ namespace Conductor.Storage.Services
             _database = database;
             CreateIndexes(_collection);
         }
+
+        private IMongoCollection<StoredResource> _collection => _database.GetCollection<StoredResource>("Resources");
 
         public Resource Find(Bucket bucket, string name)
         {
@@ -55,15 +51,15 @@ namespace Conductor.Storage.Services
 
             return versions.Max(x => x.Version);
         }
-        
+
         public void Save(Bucket bucket, Resource resource)
         {
             var json = JsonConvert.SerializeObject(resource);
             var doc = BsonDocument.Parse(json);
 
             var version = GetLatestVersion(bucket, resource.Name) ?? 1;
-            
-            _collection.InsertOne(new StoredResource()
+
+            _collection.InsertOne(new StoredResource
             {
                 Name = resource.Name,
                 Version = version,
@@ -72,13 +68,16 @@ namespace Conductor.Storage.Services
             });
         }
 
-        static bool indexesCreated = false;
-        static void CreateIndexes(IMongoCollection<StoredResource> collection)
+        private static void CreateIndexes(IMongoCollection<StoredResource> collection)
         {
             if (!indexesCreated)
             {
-                collection.Indexes.CreateOne(Builders<StoredResource>.IndexKeys.Ascending(x => x.Bucket).Ascending(x => x.Name).Ascending(x => x.Version), new CreateIndexOptions() { Background = true, Name = "unq_resource_id_version", Unique = true });
-                collection.Indexes.CreateOne(Builders<StoredResource>.IndexKeys.Ascending(x => x.Name), new CreateIndexOptions() { Background = true, Name = "idx_resource_id" });
+                collection.Indexes.CreateOne(
+                    Builders<StoredResource>.IndexKeys.Ascending(x => x.Bucket).Ascending(x => x.Name)
+                        .Ascending(x => x.Version),
+                    new CreateIndexOptions { Background = true, Name = "unq_resource_id_version", Unique = true });
+                collection.Indexes.CreateOne(Builders<StoredResource>.IndexKeys.Ascending(x => x.Name),
+                    new CreateIndexOptions { Background = true, Name = "idx_resource_id" });
                 indexesCreated = true;
             }
         }

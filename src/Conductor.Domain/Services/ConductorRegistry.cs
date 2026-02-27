@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
 
@@ -9,12 +8,8 @@ namespace Conductor.Domain.Services
 {
     public class ConductorRegistry : IWorkflowRegistry
     {
-        private readonly List<(string WorkflowId, int Version, WorkflowDefinition WorkflowDefinition)> _registry = new List<(string workflowId, int version, WorkflowDefinition workflowDefinition)>();
-
-        public ConductorRegistry()
-        {
-            
-        }
+        private readonly List<(string WorkflowId, int Version, WorkflowDefinition WorkflowDefinition)> _registry =
+            new List<(string workflowId, int version, WorkflowDefinition workflowDefinition)>();
 
         public void DeregisterWorkflow(string workflowId, int version)
         {
@@ -36,7 +31,7 @@ namespace Conductor.Domain.Services
             else
             {
                 var entry = _registry.Where(x => x.WorkflowId == workflowId).OrderByDescending(x => x.Version)
-                                     .FirstOrDefault();
+                    .FirstOrDefault();
                 return entry.WorkflowDefinition;
             }
         }
@@ -49,9 +44,8 @@ namespace Conductor.Domain.Services
         public void RegisterWorkflow(WorkflowDefinition definition)
         {
             if (_registry.Any(x => x.Item1 == definition.Id && x.Item2 == definition.Version))
-            {
-                throw new InvalidOperationException($"Workflow {definition.Id} version {definition.Version} is already registered");
-            }
+                throw new InvalidOperationException(
+                    $"Workflow {definition.Id} version {definition.Version} is already registered");
 
             _registry.Add((definition.Id, definition.Version, definition));
         }

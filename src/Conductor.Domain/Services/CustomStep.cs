@@ -1,9 +1,7 @@
-﻿using Conductor.Domain.Interfaces;
-using Conductor.Domain.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
+using Conductor.Domain.Interfaces;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
 
@@ -11,7 +9,12 @@ namespace Conductor.Domain.Services
 {
     public class CustomStep : StepBodyAsync
     {
-        private ICustomStepService _service;
+        private readonly ICustomStepService _service;
+
+        public CustomStep(ICustomStepService service)
+        {
+            _service = service;
+        }
 
         public Dictionary<string, object> _variables { get; set; } = new Dictionary<string, object>();
 
@@ -21,15 +24,10 @@ namespace Conductor.Domain.Services
             set => _variables[propertyName] = value;
         }
 
-        public CustomStep(ICustomStepService service)
+        public override async Task<ExecutionResult> RunAsync(IStepExecutionContext context)
         {
-            _service = service;
-        }
+            var resource = _service.GetStepResource(Convert.ToString(_variables["__custom_step__"]));
 
-        public async override Task<ExecutionResult> RunAsync(IStepExecutionContext context)
-        {
-            var resource =_service.GetStepResource(Convert.ToString(_variables["__custom_step__"]));
-            
             _service.Execute(resource, _variables);
             return ExecutionResult.Next();
         }

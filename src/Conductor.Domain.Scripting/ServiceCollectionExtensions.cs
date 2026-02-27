@@ -1,5 +1,4 @@
-﻿using System;
-using Conductor.Domain.Interfaces;
+﻿using Conductor.Domain.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Conductor.Domain.Scripting

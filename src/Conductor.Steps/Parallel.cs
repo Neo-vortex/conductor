@@ -1,9 +1,8 @@
-﻿using System;
-using WorkflowCore.Primitives;
+﻿using WorkflowCore.Primitives;
 
 namespace Conductor.Steps
 {
     public class Parallel : Sequence
-    {        
+    {
     }
 }

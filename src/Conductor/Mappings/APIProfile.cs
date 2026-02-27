@@ -1,8 +1,6 @@
 ﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using WorkflowCore.Interface;
+using WorkflowCore.Models;
 
 namespace Conductor.Mappings
 {
@@ -10,7 +8,7 @@ namespace Conductor.Mappings
     {
         public APIProfile()
         {
-            CreateMap<WorkflowCore.Models.WorkflowInstance, Models.WorkflowInstance>()
+            CreateMap<WorkflowInstance, Models.WorkflowInstance>()
                 .ForMember(dest => dest.DefinitionId, opt => opt.MapFrom(src => src.WorkflowDefinitionId))
                 .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => src.CompleteTime))
                 .ForMember(dest => dest.Reference, opt => opt.MapFrom(src => src.Reference))
@@ -20,7 +18,7 @@ namespace Conductor.Mappings
                 .ForMember(dest => dest.Data, opt => opt.MapFrom(src => src.Data))
                 .ForMember(dest => dest.WorkflowId, opt => opt.MapFrom(src => src.Id));
 
-            CreateMap<WorkflowCore.Interface.PendingActivity, Models.PendingActivity>()
+            CreateMap<PendingActivity, Models.PendingActivity>()
                 .ForMember(dest => dest.Token, opt => opt.MapFrom(src => src.Token))
                 .ForMember(dest => dest.TokenExpiry, opt => opt.MapFrom(src => src.TokenExpiry))
                 .ForMember(dest => dest.Parameters, opt => opt.MapFrom(src => src.Parameters))

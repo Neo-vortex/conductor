@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using WorkflowCore.Models;
 
 namespace Conductor.Domain.Models
@@ -20,6 +19,5 @@ namespace Conductor.Domain.Models
         public TimeSpan? DefaultErrorRetryInterval { get; set; }
 
         public List<Step> Steps { get; set; } = new List<Step>();
-        
     }
 }

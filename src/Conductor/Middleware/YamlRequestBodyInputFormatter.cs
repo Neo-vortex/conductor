@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Conductor.Domain.Models;
 using Microsoft.AspNetCore.Mvc.Formatters;
@@ -26,9 +24,9 @@ namespace Conductor.Formatters
 
             var request = context.HttpContext.Request;
             using (var reader = new StreamReader(request.Body))
-            {                
+            {
                 var content = await reader.ReadToEndAsync();
-                    
+
                 var serializer = new Serializer();
 
                 if (context.ModelType == typeof(Definition))
@@ -48,14 +46,14 @@ namespace Conductor.Formatters
                     var data = serializer.DeserializeInto(content, new ExpandoObject());
                     return await InputFormatterResult.SuccessAsync(data);
                 }
-                    
+
                 if (context.ModelType == typeof(object))
                 {
                     var data = serializer.Deserialize(content);
                     return await InputFormatterResult.SuccessAsync(JObject.FromObject(data));
                 }
 
-                return await InputFormatterResult.FailureAsync();                
+                return await InputFormatterResult.FailureAsync();
             }
         }
     }

@@ -1,19 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
+using IronPython.Hosting;
 using Microsoft.Scripting.Hosting;
 
 namespace Conductor.Domain.Scripting
 {
-    class ScriptEngineFactory : IScriptEngineFactory
+    internal class ScriptEngineFactory : IScriptEngineFactory
     {
-        private Dictionary<string, ScriptEngine> _engines = new Dictionary<string, ScriptEngine>()
+        private readonly Dictionary<string, ScriptEngine> _engines = new Dictionary<string, ScriptEngine>
         {
-            [@"text/x-python"] = IronPython.Hosting.Python.CreateEngine(),
-            [string.Empty] = IronPython.Hosting.Python.CreateEngine()
+            [@"text/x-python"] = Python.CreateEngine(),
+            [string.Empty] = Python.CreateEngine()
         };
 
-        public ScriptEngine GetEngine(string contentType) => _engines[contentType];
-        public ScriptEngine GetExpressionEngine() => _engines[string.Empty];
+        public ScriptEngine GetEngine(string contentType)
+        {
+            return _engines[contentType];
+        }
+
+        public ScriptEngine GetExpressionEngine()
+        {
+            return _engines[string.Empty];
+        }
     }
 }

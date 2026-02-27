@@ -1,43 +1,46 @@
 ﻿using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-using Docker.DotNet;
-using Docker.DotNet.Models;
-using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
-using System.Text;
-using Org.BouncyCastle.Utilities.IO.Pem;
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Parameters;
 using System.Security.Cryptography;
-using Org.BouncyCastle.Security;
-using Org.BouncyCastle.Math;
-using Org.BouncyCastle.Asn1.Nist;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
 using Org.BouncyCastle.Asn1;
+using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Asn1.Sec;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Math;
+using Org.BouncyCastle.Security;
 
 namespace ScratchPad
 {
-    class Program
+    internal class Program
     {
-        static string PrivateKey = "MHQCAQEEIA2OjSVFJwR/tsoo0VtrgAfUXu+lRXRXOA10eS/UF5tloAcGBSuBBAAKoUQDQgAEIOD1lD7PkLyHGj3n/+d564tc5s4eqrox5OinvTL5mekSR1GFTSpEvOELYWLqSfADkRNgDuR0g9cBVmaNtFwiIA==";
-        static string RealPublicKey = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9q9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==";
+        private static readonly string PrivateKey =
+            "MHQCAQEEIA2OjSVFJwR/tsoo0VtrgAfUXu+lRXRXOA10eS/UF5tloAcGBSuBBAAKoUQDQgAEIOD1lD7PkLyHGj3n/+d564tc5s4eqrox5OinvTL5mekSR1GFTSpEvOELYWLqSfADkRNgDuR0g9cBVmaNtFwiIA==";
 
-        static string Key2 = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2OF/2NxApJCzGCEDdfSp6VQO30hyhRANCAAQRWz+jn65BtOMvdyHKcvjBeBSDZH2r1RTwjmYSi9R/zpBnuQ4EiMnCqfMPWiZqB4QdbAd0E7oH50VpuZ1P087G";
-        static string Key2Pub = "hcEuk1hs8QsZT24s96dnlORoFLF+Alh1wxVkKdSs0mH8CM7SEAOhONKi8xM1/kEDufovcKwvvxx+z3r1SvNpGA==";
+        private static readonly string RealPublicKey =
+            "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9q9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==";
 
-        static void Main(string[] args)
+        private static string Key2 =
+            "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2OF/2NxApJCzGCEDdfSp6VQO30hyhRANCAAQRWz+jn65BtOMvdyHKcvjBeBSDZH2r1RTwjmYSi9R/zpBnuQ4EiMnCqfMPWiZqB4QdbAd0E7oH50VpuZ1P087G";
+
+        private static string Key2Pub =
+            "hcEuk1hs8QsZT24s96dnlORoFLF+Alh1wxVkKdSs0mH8CM7SEAOhONKi8xM1/kEDufovcKwvvxx+z3r1SvNpGA==";
+
+
+        private readonly DerObjectIdentifier _curveId = SecObjectIdentifiers.SecP256k1;
+
+        private static void Main(string[] args)
         {
             MakeToken();
             //var token = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjpbIkFkbWluIiwiQXV0aG9yIiwiQ29udHJvbGxlciIsIlZpZXdlciJdLCJleHAiOjQ3MzI3OTY2NDQsImlhdCI6MTU3NzEyMzA0NH0.CQB0QCLgBxWPqlq48tMzR8eyNbguTkpQK4n9GL6ynzM-SNL9sxO7zTPwbDEXTIJYQc2nk0VemE2FlYO057DV1A";
             //Console.WriteLine(VerifyToken(token));
         }
 
-        static void MakeToken()
+        private static void MakeToken()
         {
-            var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var tokenHandler = new JwtSecurityTokenHandler();
             var now = DateTime.UtcNow;
 
             //var keyDataStr = File.ReadAllText(@"C:\dev\jwt\test1.key");
@@ -47,7 +50,7 @@ namespace ScratchPad
             var e1 = ECDsa.Create(); // (ECCurve.NamedCurves.nistP256);
             var privKey = Convert.FromBase64String(PrivateKey);
             //var privKey = Convert.FromBase64String(Key2);
-            e1.ImportECPrivateKey(privKey, out int rb1);
+            e1.ImportECPrivateKey(privKey, out var rb1);
 
             var params1 = e1.ExportParameters(false);
             var pubStr = Convert.ToBase64String(params1.Q.X.Concat(params1.Q.Y).ToArray());
@@ -55,23 +58,22 @@ namespace ScratchPad
             Console.WriteLine();
 
             //ClaimTypes.Role
-            var key = new ECDsaSecurityKey(e1);           
-            
+            var key = new ECDsaSecurityKey(e1);
+
             var sc = new SigningCredentials(key, SecurityAlgorithms.EcdsaSha256);
-            
-            
+
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                
                 Subject = new ClaimsIdentity(new[]
                 {
                     new Claim("scope", "admin author viewer")
                 }),
 
                 Expires = now.AddYears(100),
-                SigningCredentials = sc,
+                SigningCredentials = sc
             };
-            
+
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
             var tokenString = tokenHandler.WriteToken(token);
@@ -82,8 +84,8 @@ namespace ScratchPad
         }
 
         public static bool VerifyToken(string jwt)
-        {            
-            string[] jwtParts = jwt.Split('.');
+        {
+            var jwtParts = jwt.Split('.');
 
             //var sha256 = SHA256.Create();
             //var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(jwtParts[0] + '.' + jwtParts[1]));
@@ -91,9 +93,9 @@ namespace ScratchPad
             //Microsoft.IdentityModel.JsonWebTokens.JwtTokenUtilities.CreateEncodedSignature()
 
             //var keyDataStr = "AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBBpZkp9ShVxbEFtRo4r09XBEvQA/0pf26sHGKnbAxUS+G+enGBiuNdxRTzUUEvE8KK4AQxyCUotbaAydfVs4S18=";  //File.ReadAllText(@"C:\dev\jwt\test1.key.pub");
-            var pubKey = Convert.FromBase64String(RealPublicKey);  //(RealPublicKey);
+            var pubKey = Convert.FromBase64String(RealPublicKey); //(RealPublicKey);
             var e1 = ECDsa.Create();
-            e1.ImportSubjectPublicKeyInfo(pubKey, out int br);
+            e1.ImportSubjectPublicKeyInfo(pubKey, out var br);
             //e1.ImportParameters(new ECParameters()
             //{
             //    Curve = ECCurve.NamedCurves.nistP256,
@@ -107,10 +109,10 @@ namespace ScratchPad
             var key = new ECDsaSecurityKey(e1);
             //var sc = new SigningCredentials(key, SecurityAlgorithms.EcdsaSha256);
             //SecurityAlgorithms.
-            var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var tokenHandler = new JwtSecurityTokenHandler();
             //var token = tokenHandler.ReadJwtToken(jwt);
 
-            var tvp = new TokenValidationParameters()
+            var tvp = new TokenValidationParameters
             {
                 IssuerSigningKey = key,
                 ValidateIssuerSigningKey = true,
@@ -119,17 +121,15 @@ namespace ScratchPad
                 ValidateLifetime = false
             };
             var cp = tokenHandler.ValidateToken(jwt, tvp, out var vt);
-            
-            
+
 
             return false;
-
         }
 
 
         private static ECDsa LoadPrivateKey(byte[] key)
         {
-            var privKeyInt = new Org.BouncyCastle.Math.BigInteger(+1, key);
+            var privKeyInt = new BigInteger(+1, key);
             var parameters = SecNamedCurves.GetByName("secp256r1");
             var ecPoint = parameters.G.Multiply(privKeyInt);
             var privKeyX = ecPoint.Normalize().XCoord.ToBigInteger().ToByteArrayUnsigned();
@@ -138,7 +138,7 @@ namespace ScratchPad
             return ECDsa.Create(new ECParameters
             {
                 Curve = ECCurve.NamedCurves.nistP256,
-                D = privKeyInt.ToByteArrayUnsigned(),                
+                D = privKeyInt.ToByteArrayUnsigned(),
                 Q = new ECPoint
                 {
                     X = privKeyX,
@@ -173,9 +173,6 @@ namespace ScratchPad
             });
         }
 
-
-        private readonly DerObjectIdentifier _curveId = SecObjectIdentifiers.SecP256k1;
-
         public byte[] GeneratePrivateKey()
         {
             return SecureRandom.GetNextBytes(SecureRandom.GetInstance("SHA256PRNG"), 32);
@@ -183,7 +180,7 @@ namespace ScratchPad
 
         public byte[] BuildPrivateKeyFromPhrase(string phrase)
         {
-            using (var hasher = System.Security.Cryptography.SHA256.Create())
+            using (var hasher = SHA256.Create())
             {
                 var privateKey = hasher.ComputeHash(Encoding.Unicode.GetBytes(phrase));
                 return privateKey;
@@ -232,7 +229,5 @@ namespace ScratchPad
             var q = parameters.Curve.DecodePoint(publicKey);
             return new ECPublicKeyParameters("ECDSA", q, dp);
         }
-
-
     }
 }

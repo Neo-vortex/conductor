@@ -1,45 +1,39 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using Org.BouncyCastle.Security;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Conductor.Auth
 {
     public static class AuthExtensions
     {
-        
         public static AuthenticationBuilder AddJwtAuth(this AuthenticationBuilder builder, IConfiguration config)
         {
             var signingKey = LoadKey(config);
 
             builder.AddJwtBearer(options =>
-             {
-                 options.IncludeErrorDetails = true;
-                 options.RequireHttpsMetadata = false;
+            {
+                options.IncludeErrorDetails = true;
+                options.RequireHttpsMetadata = false;
 
-                 options.TokenValidationParameters = new TokenValidationParameters
-                 {
-                     ValidateIssuerSigningKey = true,
-                     IssuerSigningKey = signingKey,
-                     ValidateIssuer = false,
-                     ValidateAudience = false,
-                     RequireExpirationTime = false
-                 };
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = signingKey,
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    RequireExpirationTime = false
+                };
 
-                 options.Validate();
-             });
+                options.Validate();
+            });
 
             return builder;
         }
@@ -54,9 +48,10 @@ namespace Conductor.Auth
             {
                 Subject = new ClaimsIdentity(new[]
                 {
-                    new Claim("scope", $"{Permissions.Admin} {Permissions.Author} {Permissions.Controller} {Permissions.Viewer} {Permissions.Worker}")
+                    new Claim("scope",
+                        $"{Permissions.Admin} {Permissions.Author} {Permissions.Controller} {Permissions.Viewer} {Permissions.Worker}")
                 }),
-                SigningCredentials = sc,
+                SigningCredentials = sc
             };
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
@@ -70,16 +65,16 @@ namespace Conductor.Auth
                     IssuerSigningKey = securityKey,
                     ValidateIssuer = false,
                     ValidateAudience = false,
-                    ValidateLifetime = false,
+                    ValidateLifetime = false
                 };
                 options.RequireHttpsMetadata = false;
-                options.Events = new JwtBearerEvents()
+                options.Events = new JwtBearerEvents
                 {
                     OnMessageReceived = context =>
                     {
                         context.Token = tokenString;
                         return Task.CompletedTask;
-                    }                    
+                    }
                 };
                 options.Validate();
             });
@@ -91,11 +86,26 @@ namespace Conductor.Auth
         {
             services.AddAuthorization(options =>
             {
-                options.AddPolicy(Policies.Admin, policy => policy.RequireAssertion(context => context.User.Claims.Any(x => x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Admin))));
-                options.AddPolicy(Policies.Author, policy => policy.RequireAssertion(context => context.User.Claims.Any(x => x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Author))));
-                options.AddPolicy(Policies.Controller, policy => policy.RequireAssertion(context => context.User.Claims.Any(x => x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Controller))));
-                options.AddPolicy(Policies.Viewer, policy => policy.RequireAssertion(context => context.User.Claims.Any(x => x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Viewer))));
-                options.AddPolicy(Policies.Worker, policy => policy.RequireAssertion(context => context.User.Claims.Any(x => x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Worker))));
+                options.AddPolicy(Policies.Admin,
+                    policy => policy.RequireAssertion(context =>
+                        context.User.Claims.Any(x =>
+                            x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Admin))));
+                options.AddPolicy(Policies.Author,
+                    policy => policy.RequireAssertion(context =>
+                        context.User.Claims.Any(x =>
+                            x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Author))));
+                options.AddPolicy(Policies.Controller,
+                    policy => policy.RequireAssertion(context =>
+                        context.User.Claims.Any(x =>
+                            x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Controller))));
+                options.AddPolicy(Policies.Viewer,
+                    policy => policy.RequireAssertion(context =>
+                        context.User.Claims.Any(x =>
+                            x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Viewer))));
+                options.AddPolicy(Policies.Worker,
+                    policy => policy.RequireAssertion(context =>
+                        context.User.Claims.Any(x =>
+                            x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Worker))));
             });
         }
 
@@ -109,7 +119,7 @@ namespace Conductor.Auth
             var algName = EnvironmentVariables.Alg;
             if (string.IsNullOrEmpty(algName))
                 algName = config.GetSection("Auth").GetValue<string>("Algorithm");
-            
+
             if (algName.StartsWith("RS"))
             {
                 var rsa = RSA.Create();
@@ -121,6 +131,7 @@ namespace Conductor.Auth
                 {
                     rsa.ImportRSAPublicKey(publicKey, out _);
                 }
+
                 return new RsaSecurityKey(rsa);
             }
 
@@ -134,5 +145,4 @@ namespace Conductor.Auth
             throw new ArgumentException("Only RSA and ECDSA algorithms are supported");
         }
     }
-    
 }

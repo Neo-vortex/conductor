@@ -4,9 +4,9 @@ services:
     build:
       context: ../../
     ports:
-    - "5003:80"
+      - "5003:80"
     links:
-    - mongo
+      - mongo
     environment:
       DBHOST: mongodb://mongo:27017/
   mongo:

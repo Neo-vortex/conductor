@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Net;
-using FluentAssertions;
 using System.Threading;
-using System.Threading.Tasks;
 using Conductor.Domain.Models;
 using Conductor.Models;
+using FluentAssertions;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using Xunit;
@@ -16,7 +15,6 @@ namespace Conductor.IntegrationTests.Scenarios
     [Collection("Conductor")]
     public class CustomStepScenario : Scenario
     {
-
         public CustomStepScenario(Setup setup) : base(setup)
         {
         }
@@ -29,17 +27,17 @@ namespace Conductor.IntegrationTests.Scenarios
             inputs.a = @"data.Value1";
             inputs.b = @"data.Value2";
 
-            var definition = new Definition()
+            var definition = new Definition
             {
                 Id = Guid.NewGuid().ToString(),
-                Steps = new List<Step>()
+                Steps = new List<Step>
                 {
-                    new Step()
+                    new Step
                     {
                         Id = "step1",
                         StepType = "test-add",
                         Inputs = inputs,
-                        Outputs = new Dictionary<string, string>()
+                        Outputs = new Dictionary<string, string>
                         {
                             ["Result"] = @"step[""c""]"
                         }
@@ -69,6 +67,5 @@ namespace Conductor.IntegrationTests.Scenarios
             var data = JObject.FromObject(instance.Data);
             data["Result"].Value<int>().Should().Be(5);
         }
-        
     }
 }
