@@ -64,15 +64,30 @@ namespace Conductor.Domain.Services
             _multiplexer = null;
         }
 
-        public async void LoadNewDefinition(string id, int version)
+        public void LoadNewDefinition(string id, int version)
         {
-            var data = JsonConvert.SerializeObject(new NewDefinitionCommand
+            // Fire-and-forget publish; errors are logged but not propagated to the caller
+            // because IClusterBackplane.LoadNewDefinition is a synchronous interface method.
+            _ = PublishAsync(id, version);
+        }
+
+        private async Task PublishAsync(string id, int version)
+        {
+            try
             {
-                Originator = _nodeId,
-                DefinitionId = id,
-                Version = version
-            }, _serializerSettings);
-            await _subscriber.PublishAsync(_channel, data);
+                var data = JsonConvert.SerializeObject(new NewDefinitionCommand
+                {
+                    Originator   = _nodeId,
+                    DefinitionId = id,
+                    Version      = version
+                }, _serializerSettings);
+
+                await _subscriber.PublishAsync(_channel, data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to publish new definition command for {DefinitionId} v{Version}", id, version);
+            }
         }
     }
 

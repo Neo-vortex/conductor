@@ -1,14 +1,12 @@
-﻿using Conductor.Domain.Interfaces;
+using Conductor.Domain.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Conductor.Domain.Scripting
+namespace Conductor.Domain.Scripting;
+
+public static class ServiceCollectionExtensions
 {
-    public static class ServiceCollectionExtensions
+    public static void ConfigureScripting(this IServiceCollection services)
     {
-        public static void ConfigureScripting(this IServiceCollection services)
-        {
-            services.AddSingleton<IScriptEngineFactory, ScriptEngineFactory>();
-            services.AddSingleton<IScriptEngineHost, ScriptEngineHost>();
-        }
+        services.AddSingleton<IScriptEngineHost, ScriptEngineHost>();
     }
 }

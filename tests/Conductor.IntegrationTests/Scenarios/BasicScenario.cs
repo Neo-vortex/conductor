@@ -2,63 +2,51 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Net;
-using System.Threading;
+using System.Threading.Tasks;
 using Conductor.Domain.Models;
 using Conductor.Models;
 using FluentAssertions;
 using Newtonsoft.Json.Linq;
-using RestSharp;
 using Xunit;
 
-namespace Conductor.IntegrationTests.Scenarios
+namespace Conductor.IntegrationTests.Scenarios;
+
+[Collection("Conductor")]
+public class BasicScenario : Scenario
 {
-    [Collection("Conductor")]
-    public class BasicScenario : Scenario
+    public BasicScenario(Setup setup) : base(setup) { }
+
+    [Fact]
+    public async Task Scenario()
     {
-        public BasicScenario(Setup setup) : base(setup)
-        {
-        }
+        dynamic inputs = new ExpandoObject();
+        inputs.Value1 = "data.Value1";
+        inputs.Value2 = "data.Value2";
 
-        [Fact]
-        public async void Scenario()
+        var definition = new Definition
         {
-            dynamic inputs = new ExpandoObject();
-            inputs.Value1 = "data.Value1";
-            inputs.Value2 = "data.Value2";
-
-            var definition = new Definition
+            Id = Guid.NewGuid().ToString(),
+            Steps = new List<Step>
             {
-                Id = Guid.NewGuid().ToString(),
-                Steps = new List<Step>
+                new()
                 {
-                    new Step
-                    {
-                        Id = "step1",
-                        StepType = "AddTest",
-                        Inputs = inputs,
-                        Outputs = new Dictionary<string, string>
-                        {
-                            ["Result"] = "step.Result"
-                        }
-                    }
+                    Id       = "step1",
+                    StepType = "AddTest",
+                    Inputs   = inputs,
+                    Outputs  = new Dictionary<string, string> { ["Result"] = "step.Result" }
                 }
-            };
+            }
+        };
 
-            var registerRequest = new RestRequest(@"/definition", Method.POST);
-            registerRequest.AddJsonBody(definition);
-            var registerResponse = _client.Execute(registerRequest);
-            registerResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
-            Thread.Sleep(1000);
+        var registerResponse = await PostJsonAsync("/definition", definition);
+        registerResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        await Task.Delay(1000);
 
-            var startRequest = new RestRequest($"/workflow/{definition.Id}", Method.POST);
-            startRequest.AddJsonBody(new { Value1 = 2, Value2 = 3 });
-            var startResponse = _client.Execute<WorkflowInstance>(startRequest);
-            startResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var (startResponse, startData) = await PostJsonAsync<WorkflowInstance>($"/workflow/{definition.Id}", new { Value1 = 2, Value2 = 3 });
+        startResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
-            var instance = await WaitForComplete(startResponse.Data.WorkflowId);
-            instance.Status.Should().Be("Complete");
-            var data = JObject.FromObject(instance.Data);
-            data["Result"].Value<int>().Should().Be(5);
-        }
+        var instance = await WaitForComplete(startData!.WorkflowId);
+        instance!.Status.Should().Be("Complete");
+        JObject.FromObject(instance.Data!)["Result"]!.Value<int>().Should().Be(5);
     }
 }

@@ -181,16 +181,16 @@ namespace Conductor.Domain.Services
                 {
                     var acn = BuildObjectInputAction(input, stepProperty);
                     step.Inputs.Add(new ActionParameter<IStepBody, object>(acn));
-                    continue;
                 }
-                else
+                else if (input.Value is string || input.Value is not null)
                 {
                     var acn = BuildScalarInputAction(input, stepProperty);
                     step.Inputs.Add(new ActionParameter<IStepBody, object>(acn));
-                    continue;
                 }
-
-                throw new ArgumentException($"Unknown type for input {input.Key} on {source.Id}");
+                else
+                {
+                    throw new ArgumentException($"Unknown type for input {input.Key} on {source.Id}");
+                }
             }
         }
 

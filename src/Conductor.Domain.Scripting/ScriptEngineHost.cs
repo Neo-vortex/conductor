@@ -1,45 +1,111 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
 using Conductor.Domain.Interfaces;
 using Conductor.Domain.Models;
-using Microsoft.Scripting;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis.Scripting;
+using Microsoft.Extensions.Logging;
 
-namespace Conductor.Domain.Scripting
+namespace Conductor.Domain.Scripting;
+
+/// <summary>
+/// Roslyn-based script engine host. Replaces IronPython.
+///
+/// Expression language:  C# expressions, e.g.  data.amount * 1.1
+/// Script language:      C# statements,  e.g.  result = input + 1;
+///
+/// Available globals in expressions/scripts:
+///   data        – the workflow data object (dynamic ExpandoObject)
+///   context     – IStepExecutionContext (expressions only)
+///   environment – IDictionary of env vars
+///   step        – the step body (output scripts only)
+///   outcome     – outcome object (outcome expressions only)
+/// </summary>
+public class ScriptEngineHost : IScriptEngineHost
 {
-    public class ScriptEngineHost : IScriptEngineHost
+    private readonly ILogger<ScriptEngineHost> _logger;
+
+    // Cache compiled scripts keyed by source text to avoid recompiling on every step execution
+    private readonly ConcurrentDictionary<string, Script<object>> _expressionCache = new();
+    private readonly ConcurrentDictionary<string, Script>         _statementCache  = new();
+
+    private static readonly ScriptOptions DefaultOptions = ScriptOptions.Default
+        .WithImports(
+            "System",
+            "System.Linq",
+            "System.Collections.Generic",
+            "System.Dynamic")
+        .WithReferences(
+            typeof(object).Assembly,
+            typeof(Enumerable).Assembly,
+            typeof(System.Dynamic.ExpandoObject).Assembly);
+
+    public ScriptEngineHost(ILogger<ScriptEngineHost> logger)
     {
-        private readonly IScriptEngineFactory _engineFactory;
+        _logger = logger;
+    }
 
-        public ScriptEngineHost(IScriptEngineFactory engineFactory)
+    /// <inheritdoc/>
+    public void Execute(Resource resource, IDictionary<string, object> inputs)
+    {
+        if (resource.ContentType != "text/x-csharp")
+            throw new NotSupportedException(
+                $"Content type '{resource.ContentType}' is not supported. Use 'text/x-csharp'.");
+
+        var globals = new ScriptGlobals(inputs);
+
+        var script = _statementCache.GetOrAdd(resource.Content, src =>
+            CSharpScript.Create(src, DefaultOptions, typeof(ScriptGlobals)));
+
+        try
         {
-            _engineFactory = engineFactory;
+            script.RunAsync(globals).GetAwaiter().GetResult();
         }
-
-        public void Execute(Resource resource, IDictionary<string, object> inputs)
+        catch (CompilationErrorException ex)
         {
-            var engine = _engineFactory.GetEngine(resource.ContentType);
-
-            var source = engine.CreateScriptSourceFromString(resource.Content, SourceCodeKind.Statements);
-            var scope = engine.CreateScope(inputs);
-            source.Execute(scope);
-            SanitizeScope(inputs);
+            _logger.LogError(ex, "Compilation error in script resource '{Name}'", resource.Name);
+            throw new InvalidOperationException($"Script compilation failed: {ex.Message}", ex);
         }
-
-        public dynamic EvaluateExpression(string expression, IDictionary<string, object> inputs)
+        catch (Exception ex)
         {
-            var engine = _engineFactory.GetExpressionEngine();
-            var source = engine.CreateScriptSourceFromString(expression, SourceCodeKind.Expression);
-            var scope = engine.CreateScope(inputs);
-            return source.Execute(scope);
+            _logger.LogError(ex, "Runtime error in script resource '{Name}'", resource.Name);
+            throw;
         }
+    }
 
-        public T EvaluateExpression<T>(string expression, IDictionary<string, object> inputs)
-        {
-            return EvaluateExpression(expression, inputs);
-        }
+    /// <inheritdoc/>
+    public dynamic EvaluateExpression(string expression, IDictionary<string, object> inputs)
+    {
+        var globals = new ScriptGlobals(inputs);
 
-        private void SanitizeScope(IDictionary<string, object> scope)
+        var script = _expressionCache.GetOrAdd(expression, expr =>
+            CSharpScript.Create<object>(expr, DefaultOptions, typeof(ScriptGlobals)));
+
+        try
         {
-            scope.Remove("__builtins__");
+            return script.RunAsync(globals).GetAwaiter().GetResult().ReturnValue;
         }
+        catch (CompilationErrorException ex)
+        {
+            _logger.LogError(ex, "Compilation error in expression: {Expression}", expression);
+            throw new InvalidOperationException($"Expression compilation failed: {ex.Message}", ex);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Runtime error in expression: {Expression}", expression);
+            throw;
+        }
+    }
+
+    /// <inheritdoc/>
+    public T EvaluateExpression<T>(string expression, IDictionary<string, object> inputs)
+    {
+        var result = EvaluateExpression(expression, inputs);
+        if (result is T typed)
+            return typed;
+
+        return (T)Convert.ChangeType(result, typeof(T));
     }
 }
