@@ -1,6 +1,6 @@
 # Conductor (Modernized Fork)
 
-This repository is a maintained and modernized fork of the original **Conductor** workflow server.
+This repository is a maintained and modernized fork of the original https://github.com/danielgerlag/conductor **Conductor** workflow server.
 
 The upstream project provides a lightweight workflow orchestration server built on Workflow Core, allowing distributed services and scripts to be coordinated into long-running workflows defined in JSON or YAML.
 
