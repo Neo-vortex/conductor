@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #__next { height: 100%; overflow: hidden; }
+
+/* ReactFlow overrides */
+.react-flow__handle {
+  width: 13px !important;
+  height: 13px !important;
+  border-radius: 50% !important;
+  transition: transform 0.15s;
+  z-index: 20;
+}
+.react-flow__handle:hover { transform: scale(1.5) !important; }
+.react-flow__handle-left  { left: -8px !important; background: #1e293b !important; border: 2px solid #6366f1 !important; }
+.react-flow__handle-right { right: -8px !important; background: #6366f1 !important; border: 2px solid #818cf8 !important; }
+.react-flow__handle-top   { top: -8px !important; background: #f59e0b !important; border: 2px solid #fbbf24 !important; }
+.react-flow__handle-bottom{ bottom: -8px !important; background: #10b981 !important; border: 2px solid #34d399 !important; }
+
+.react-flow__edge-path { stroke-width: 2 !important; }
+.react-flow__node.selected > div { outline: 2px solid #6366f1 !important; outline-offset: 3px; }
+
+.react-flow__minimap { background: #0f172a !important; border: 1px solid #334155; border-radius: 8px; }
+.react-flow__controls { border: 1px solid #334155; border-radius: 8px; overflow: hidden; }
+.react-flow__controls-button { background: #1e293b !important; border-color: #334155 !important; fill: #94a3b8 !important; }
+.react-flow__controls-button:hover { background: #334155 !important; }
+.react-flow__background { background: #0d1117 !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* Animations */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.panel-animate { animation: fadeSlideIn 0.18s ease-out; }
+
+/* Edge label */
+.react-flow__edge-textbg { fill: #1e293b !important; }
+.react-flow__edge-text   { fill: #94a3b8 !important; font-size: 11px !important; }
+
+/* ── CodeMirror / ExprInput ──────────────────────────────────────────────────── */
+.cm-editor { font-family: 'JetBrains Mono','Fira Code',monospace !important; }
+.cm-editor .cm-scroller { overflow: auto; }
+/* Keep autocomplete dropdown above ReactFlow minimap etc */
+.cm-tooltip { z-index: 9999 !important; }
+/* Smooth open animation for expanded editor */
+@keyframes cmExpand {
+  from { opacity: 0; transform: scaleY(0.92); transform-origin: top; }
+  to   { opacity: 1; transform: scaleY(1); }
+}
+.cm-editor { animation: cmExpand 0.15s ease-out; }
