@@ -1,6 +1,4 @@
-using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 using Conductor.Auth;
 using Conductor.Domain.Interfaces;
 using Conductor.Domain.Models;
@@ -41,9 +39,9 @@ public class StepController : ControllerBase
         using var sr = new StreamReader(Request.Body);
         var resource = new Resource
         {
-            Name        = name,
+            Name = name,
             ContentType = Request.ContentType ?? "text/plain",
-            Content     = await sr.ReadToEndAsync()
+            Content = await sr.ReadToEndAsync()
         };
         _service.SaveStepResource(resource);
         return Ok();
@@ -62,7 +60,7 @@ public class StepResourceResult : IActionResult
     public async Task ExecuteResultAsync(ActionContext context)
     {
         context.HttpContext.Response.Headers["Content-Type"] = _resource.ContentType;
-        context.HttpContext.Response.StatusCode              = 200;
+        context.HttpContext.Response.StatusCode = 200;
         var body = Encoding.UTF8.GetBytes(_resource.Content);
         await context.HttpContext.Response.Body.WriteAsync(body);
     }

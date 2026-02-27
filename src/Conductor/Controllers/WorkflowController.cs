@@ -1,5 +1,4 @@
 using System.Dynamic;
-using System.Threading.Tasks;
 using Conductor.Auth;
 using Conductor.Mappings;
 using Conductor.Models;
@@ -21,9 +20,9 @@ public class WorkflowController : ControllerBase
     public WorkflowController(IWorkflowController workflowController, IPersistenceProvider persistenceProvider,
         IMapper mapper)
     {
-        _workflowController  = workflowController;
+        _workflowController = workflowController;
         _persistenceProvider = persistenceProvider;
-        _mapper              = mapper;
+        _mapper = mapper;
     }
 
     [HttpGet("{id}")]
@@ -42,7 +41,7 @@ public class WorkflowController : ControllerBase
     public async Task<ActionResult<WorkflowInstance>> Post(string id, [FromBody] ExpandoObject data)
     {
         var instanceId = await _workflowController.StartWorkflow(id, data);
-        var result     = await _persistenceProvider.GetWorkflowInstance(instanceId);
+        var result = await _persistenceProvider.GetWorkflowInstance(instanceId);
 
         return Created(instanceId, _mapper.Map(result));
     }

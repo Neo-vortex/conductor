@@ -18,11 +18,12 @@ var config = builder.Configuration;
 
 // ── connection strings ────────────────────────────────────────────────────
 var dbConnectionStr = EnvironmentVariables.DbHost
-    ?? config.GetValue<string>("DbConnectionString")
-    ?? throw new InvalidOperationException("No DB connection string configured (env: dbhost / DbConnectionString).");
+                      ?? config.GetValue<string>("DbConnectionString")
+                      ?? throw new InvalidOperationException(
+                          "No DB connection string configured (env: dbhost / DbConnectionString).");
 
 var redisConnectionStr = EnvironmentVariables.Redis
-    ?? config.GetValue<string>("RedisConnectionString");
+                         ?? config.GetValue<string>("RedisConnectionString");
 
 var authEnabledRaw = EnvironmentVariables.Auth;
 var authEnabled = string.IsNullOrEmpty(authEnabledRaw)
@@ -48,7 +49,7 @@ builder.Services.AddSwaggerGen(c =>
 var authBuilder = builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme    = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 });
 
 if (authEnabled)
@@ -120,9 +121,9 @@ app.UseAuthorization();
 app.MapControllers();
 
 // ── start workflow engine ─────────────────────────────────────────────────
-var host       = app.Services.GetRequiredService<IWorkflowHost>();
+var host = app.Services.GetRequiredService<IWorkflowHost>();
 var defService = app.Services.GetRequiredService<IDefinitionService>();
-var backplane  = app.Services.GetRequiredService<IClusterBackplane>();
+var backplane = app.Services.GetRequiredService<IClusterBackplane>();
 
 defService.LoadDefinitionsFromStorage();
 await backplane.Start();

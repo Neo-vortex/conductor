@@ -4,27 +4,26 @@ using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 using WorkflowCore.Models;
 
-namespace Conductor.Storage
+namespace Conductor.Storage;
+
+public static class ServiceCollectionExtensions
 {
-    public static class ServiceCollectionExtensions
+    public static void UseMongoDB(this IServiceCollection services, string mongoUrl, string databaseName)
     {
-        public static void UseMongoDB(this IServiceCollection services, string mongoUrl, string databaseName)
+        var client = new MongoClient(mongoUrl);
+        var db = client.GetDatabase(databaseName);
+        services.AddTransient<IDefinitionRepository, DefinitionRepository>(x => new DefinitionRepository(db));
+        services.AddTransient<IResourceRepository, ResourceRepository>(x => new ResourceRepository(db));
+    }
+
+    public static WorkflowOptions UseMongoDB(this WorkflowOptions options, string mongoUrl, string databaseName)
+    {
+        options.UsePersistence(sp =>
         {
             var client = new MongoClient(mongoUrl);
             var db = client.GetDatabase(databaseName);
-            services.AddTransient<IDefinitionRepository, DefinitionRepository>(x => new DefinitionRepository(db));
-            services.AddTransient<IResourceRepository, ResourceRepository>(x => new ResourceRepository(db));
-        }
-
-        public static WorkflowOptions UseMongoDB(this WorkflowOptions options, string mongoUrl, string databaseName)
-        {
-            options.UsePersistence(sp =>
-            {
-                var client = new MongoClient(mongoUrl);
-                var db = client.GetDatabase(databaseName);
-                return new WorkflowPersistenceProvider(db);
-            });
-            return options;
-        }
+            return new WorkflowPersistenceProvider(db);
+        });
+        return options;
     }
 }

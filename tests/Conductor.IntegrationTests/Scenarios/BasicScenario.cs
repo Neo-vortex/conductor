@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
+﻿using System.Dynamic;
 using System.Net;
-using System.Threading.Tasks;
 using Conductor.Domain.Models;
 using Conductor.Models;
 using FluentAssertions;
@@ -14,7 +11,9 @@ namespace Conductor.IntegrationTests.Scenarios;
 [Collection("Conductor")]
 public class BasicScenario : Scenario
 {
-    public BasicScenario(Setup setup) : base(setup) { }
+    public BasicScenario(Setup setup) : base(setup)
+    {
+    }
 
     [Fact]
     public async Task Scenario()
@@ -30,10 +29,10 @@ public class BasicScenario : Scenario
             {
                 new()
                 {
-                    Id       = "step1",
+                    Id = "step1",
                     StepType = "AddTest",
-                    Inputs   = inputs,
-                    Outputs  = new Dictionary<string, string> { ["Result"] = "step.Result" }
+                    Inputs = inputs,
+                    Outputs = new Dictionary<string, string> { ["Result"] = "step.Result" }
                 }
             }
         };
@@ -42,7 +41,8 @@ public class BasicScenario : Scenario
         registerResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
         await Task.Delay(1000);
 
-        var (startResponse, startData) = await PostJsonAsync<WorkflowInstance>($"/workflow/{definition.Id}", new { Value1 = 2, Value2 = 3 });
+        var (startResponse, startData) =
+            await PostJsonAsync<WorkflowInstance>($"/workflow/{definition.Id}", new { Value1 = 2, Value2 = 3 });
         startResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var instance = await WaitForComplete(startData!.WorkflowId);

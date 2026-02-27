@@ -1,61 +1,59 @@
-﻿using System.Collections.Generic;
-using Conductor.Auth;
+﻿using Conductor.Auth;
 using Conductor.Domain.Interfaces;
 using Conductor.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Conductor.Controllers
+namespace Conductor.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+public class DefinitionController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class DefinitionController : ControllerBase
+    private readonly IDefinitionService _service;
+
+    public DefinitionController(IDefinitionService service)
     {
-        private readonly IDefinitionService _service;
+        _service = service;
+    }
 
-        public DefinitionController(IDefinitionService service)
-        {
-            _service = service;
-        }
+    [HttpGet]
+    [Authorize(Policy = Policies.Author)]
+    public ActionResult<IEnumerable<string>> Get()
+    {
+        return new[] { "value1", "value2" };
+    }
 
-        [HttpGet]
-        [Authorize(Policy = Policies.Author)]
-        public ActionResult<IEnumerable<string>> Get()
-        {
-            return new[] { "value1", "value2" };
-        }
+    [HttpGet("{id}")]
+    [Authorize(Policy = Policies.Author)]
+    public ActionResult<Definition> Get(string id)
+    {
+        var result = _service.GetDefinition(id);
 
-        [HttpGet("{id}")]
-        [Authorize(Policy = Policies.Author)]
-        public ActionResult<Definition> Get(string id)
-        {
-            var result = _service.GetDefinition(id);
+        if (result == null)
+            return NotFound();
 
-            if (result == null)
-                return NotFound();
+        return Ok(result);
+    }
 
-            return Ok(result);
-        }
+    [HttpPost]
+    [Authorize(Policy = Policies.Author)]
+    public void Post([FromBody] Definition value)
+    {
+        _service.RegisterNewDefinition(value);
+        Response.StatusCode = 204;
+    }
 
-        [HttpPost]
-        [Authorize(Policy = Policies.Author)]
-        public void Post([FromBody] Definition value)
-        {
-            _service.RegisterNewDefinition(value);
-            Response.StatusCode = 204;
-        }
+    //[HttpPut]
+    //public void Put([FromBody] string value)
+    //{
+    //    _service.RegisterNewDefinition(value);
+    //}
 
-        //[HttpPut]
-        //public void Put([FromBody] string value)
-        //{
-        //    _service.RegisterNewDefinition(value);
-        //}
-
-        // DELETE api/values/5
-        [HttpDelete("{id}")]
-        [Authorize(Policy = Policies.Author)]
-        public void Delete(int id)
-        {
-        }
+    // DELETE api/values/5
+    [HttpDelete("{id}")]
+    [Authorize(Policy = Policies.Author)]
+    public void Delete(int id)
+    {
     }
 }

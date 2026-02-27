@@ -1,28 +1,26 @@
-﻿using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
 
-namespace Conductor.Steps
+namespace Conductor.Steps;
+
+public class EmitLog : StepBodyAsync
 {
-    public class EmitLog : StepBodyAsync
+    private readonly ILoggerFactory _loggerFactory;
+
+    public EmitLog(ILoggerFactory loggerFactory)
     {
-        private readonly ILoggerFactory _loggerFactory;
+        _loggerFactory = loggerFactory;
+    }
 
-        public EmitLog(ILoggerFactory loggerFactory)
-        {
-            _loggerFactory = loggerFactory;
-        }
+    public string Message { get; set; }
 
-        public string Message { get; set; }
+    public LogLevel Level { get; set; } = LogLevel.Information;
 
-        public LogLevel Level { get; set; } = LogLevel.Information;
-
-        public override Task<ExecutionResult> RunAsync(IStepExecutionContext context)
-        {
-            var logger = _loggerFactory.CreateLogger(context.Workflow.WorkflowDefinitionId);
-            logger.Log(Level, default, Message, null, (state, ex) => state);
-            return Task.FromResult(ExecutionResult.Next());
-        }
+    public override Task<ExecutionResult> RunAsync(IStepExecutionContext context)
+    {
+        var logger = _loggerFactory.CreateLogger(context.Workflow.WorkflowDefinitionId);
+        logger.Log(Level, default, Message, null, (state, ex) => state);
+        return Task.FromResult(ExecutionResult.Next());
     }
 }

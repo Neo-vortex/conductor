@@ -1,11 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.Dynamic;
-using System.Net.Http;
-using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
@@ -13,8 +8,8 @@ using WorkflowCore.Models;
 namespace Conductor.Steps;
 
 /// <summary>
-/// Workflow step that executes an HTTP request using <see cref="IHttpClientFactory"/>.
-/// Replaces the old RestSharp-based implementation.
+///     Workflow step that executes an HTTP request using <see cref="IHttpClientFactory" />.
+///     Replaces the old RestSharp-based implementation.
 /// </summary>
 public class HttpRequest : StepBodyAsync
 {
@@ -24,29 +19,29 @@ public class HttpRequest : StepBodyAsync
     public HttpRequest(IHttpClientFactory httpClientFactory, ILogger<HttpRequest> logger)
     {
         _httpClientFactory = httpClientFactory;
-        _logger            = logger;
+        _logger = logger;
     }
 
     // ── inputs ────────────────────────────────────────────────────────────
     /// <summary>Base URL, e.g. https://api.example.com</summary>
     public string BaseUrl { get; set; } = string.Empty;
 
-    /// <summary>Path relative to <see cref="BaseUrl"/>, e.g. /users/42</summary>
+    /// <summary>Path relative to <see cref="BaseUrl" />, e.g. /users/42</summary>
     public string Resource { get; set; } = string.Empty;
 
     /// <summary>HTTP method: GET, POST, PUT, PATCH, DELETE (default: GET).</summary>
     public string Method { get; set; } = "GET";
 
-    public IDictionary<string, object>? Headers    { get; set; }
+    public IDictionary<string, object>? Headers { get; set; }
     public IDictionary<string, object>? Parameters { get; set; }
 
     /// <summary>Request body — serialised to JSON when present.</summary>
     public ExpandoObject? Body { get; set; }
 
     // ── outputs ───────────────────────────────────────────────────────────
-    public bool   IsSuccessful  { get; set; }
-    public int    ResponseCode  { get; set; }
-    public string ErrorMessage  { get; set; } = string.Empty;
+    public bool IsSuccessful { get; set; }
+    public int ResponseCode { get; set; }
+    public string ErrorMessage { get; set; } = string.Empty;
 
     /// <summary>Parsed JSON response body as a dynamic object.</summary>
     public dynamic? ResponseBody { get; set; }
@@ -57,7 +52,7 @@ public class HttpRequest : StepBodyAsync
         // Build URL with optional query-string parameters
         var url = BuildUrl();
 
-        using var client  = _httpClientFactory.CreateClient();
+        using var client = _httpClientFactory.CreateClient();
         using var request = new HttpRequestMessage(ParseMethod(Method), url);
 
         // Headers
@@ -75,8 +70,8 @@ public class HttpRequest : StepBodyAsync
         try
         {
             using var response = await client.SendAsync(request, context.CancellationToken);
-            ResponseCode  = (int)response.StatusCode;
-            IsSuccessful  = response.IsSuccessStatusCode;
+            ResponseCode = (int)response.StatusCode;
+            IsSuccessful = response.IsSuccessStatusCode;
 
             if (response.IsSuccessStatusCode)
             {
@@ -107,8 +102,8 @@ public class HttpRequest : StepBodyAsync
     private string BuildUrl()
     {
         var baseUri = BaseUrl.TrimEnd('/');
-        var path    = Resource.TrimStart('/');
-        var url     = string.IsNullOrEmpty(path) ? baseUri : $"{baseUri}/{path}";
+        var path = Resource.TrimStart('/');
+        var url = string.IsNullOrEmpty(path) ? baseUri : $"{baseUri}/{path}";
 
         if (Parameters == null || Parameters.Count == 0)
             return url;
@@ -121,18 +116,21 @@ public class HttpRequest : StepBodyAsync
             qs.Append(Uri.EscapeDataString(Convert.ToString(value) ?? string.Empty));
             qs.Append('&');
         }
+
         return url + qs.ToString().TrimEnd('&');
     }
 
-    private static HttpMethod ParseMethod(string method) =>
-        method.ToUpperInvariant() switch
+    private static HttpMethod ParseMethod(string method)
+    {
+        return method.ToUpperInvariant() switch
         {
-            "GET"    => HttpMethod.Get,
-            "POST"   => HttpMethod.Post,
-            "PUT"    => HttpMethod.Put,
-            "PATCH"  => HttpMethod.Patch,
+            "GET" => HttpMethod.Get,
+            "POST" => HttpMethod.Post,
+            "PUT" => HttpMethod.Put,
+            "PATCH" => HttpMethod.Patch,
             "DELETE" => HttpMethod.Delete,
-            "HEAD"   => HttpMethod.Head,
-            _        => throw new ArgumentException($"Unsupported HTTP method: {method}")
+            "HEAD" => HttpMethod.Head,
+            _ => throw new ArgumentException($"Unsupported HTTP method: {method}")
         };
+    }
 }

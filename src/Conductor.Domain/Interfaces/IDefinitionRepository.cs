@@ -1,16 +1,14 @@
-﻿using System.Collections.Generic;
-using Conductor.Domain.Models;
+﻿using Conductor.Domain.Models;
 
-namespace Conductor.Domain.Interfaces
+namespace Conductor.Domain.Interfaces;
+
+public interface IDefinitionRepository
 {
-    public interface IDefinitionRepository
-    {
-        IEnumerable<Definition> GetAll();
+    IEnumerable<Definition> GetAll();
 
-        Definition Find(string workflowId);
-        Definition Find(string workflowId, int version);
-        int? GetLatestVersion(string workflowId);
+    Definition Find(string workflowId);
+    Definition Find(string workflowId, int version);
+    int? GetLatestVersion(string workflowId);
 
-        void Save(Definition definition);
-    }
+    void Save(Definition definition);
 }

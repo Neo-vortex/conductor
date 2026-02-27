@@ -1,12 +1,10 @@
-﻿using System.Collections.Generic;
-using Conductor.Domain.Models;
+﻿using Conductor.Domain.Models;
 
-namespace Conductor.Domain.Interfaces
+namespace Conductor.Domain.Interfaces;
+
+public interface ICustomStepService
 {
-    public interface ICustomStepService
-    {
-        void SaveStepResource(Resource resource);
-        Resource GetStepResource(string name);
-        void Execute(Resource resource, IDictionary<string, object> scope);
-    }
+    void SaveStepResource(Resource resource);
+    Resource GetStepResource(string name);
+    void Execute(Resource resource, IDictionary<string, object> scope);
 }

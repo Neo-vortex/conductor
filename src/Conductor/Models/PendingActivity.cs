@@ -1,12 +1,9 @@
-﻿using System;
+﻿namespace Conductor.Models;
 
-namespace Conductor.Models
+public class PendingActivity
 {
-    public class PendingActivity
-    {
-        public string Token { get; set; }
-        public string ActivityName { get; set; }
-        public object Parameters { get; set; }
-        public DateTime TokenExpiry { get; set; }
-    }
+    public string Token { get; set; }
+    public string ActivityName { get; set; }
+    public object Parameters { get; set; }
+    public DateTime TokenExpiry { get; set; }
 }

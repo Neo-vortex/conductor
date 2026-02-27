@@ -14,14 +14,14 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.3" />
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.3" />
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.3" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.3" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.4" />
-        <PackageReference Include="WorkflowCore" Version="3.17.0" />
-        <PackageReference Include="WorkflowCore.Providers.Redis" Version="3.17.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.3"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.3"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.3"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3"/>
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.3"/>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.4"/>
+        <PackageReference Include="WorkflowCore" Version="3.17.0"/>
+        <PackageReference Include="WorkflowCore.Providers.Redis" Version="3.17.0"/>
     </ItemGroup>
 
     <ItemGroup>

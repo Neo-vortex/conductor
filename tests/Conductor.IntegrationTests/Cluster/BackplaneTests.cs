@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Net.Http;
+﻿using System.Net;
 using System.Text;
-using System.Threading.Tasks;
 using Conductor.Domain.Models;
 using FluentAssertions;
 using Newtonsoft.Json;
@@ -35,14 +31,14 @@ public class BackplaneTests
             }
         };
 
-        var json    = JsonConvert.SerializeObject(definition);
+        var json = JsonConvert.SerializeObject(definition);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         var registerResponse = await _client1.PostAsync("/definition", content);
         registerResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
         await Task.Delay(1000);
 
-        var startContent  = new StringContent("{}", Encoding.UTF8, "application/json");
+        var startContent = new StringContent("{}", Encoding.UTF8, "application/json");
         var startResponse = await _client2.PostAsync($"/workflow/{definition.Id}", startContent);
         startResponse.StatusCode.Should().Be(HttpStatusCode.Created);
     }

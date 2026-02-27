@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
+﻿using System.Dynamic;
 using System.Net;
-using System.Threading.Tasks;
 using Conductor.Domain.Models;
 using Conductor.Models;
 using FluentAssertions;
@@ -14,13 +11,15 @@ namespace Conductor.IntegrationTests.Scenarios;
 [Collection("Conductor")]
 public class HttpScenario : Scenario
 {
-    public HttpScenario(Setup setup) : base(setup) { }
+    public HttpScenario(Setup setup) : base(setup)
+    {
+    }
 
     [Fact]
     public async Task should_get()
     {
         dynamic inputs = new ExpandoObject();
-        inputs.BaseUrl  = @"""http://demo7149346.mockable.io/""";
+        inputs.BaseUrl = @"""http://demo7149346.mockable.io/""";
         inputs.Resource = @"""ping""";
 
         var definition = new Definition
@@ -30,10 +29,10 @@ public class HttpScenario : Scenario
             {
                 new()
                 {
-                    Id       = "step1",
+                    Id = "step1",
                     StepType = "HttpRequest",
-                    Inputs   = inputs,
-                    Outputs  = new Dictionary<string, string>
+                    Inputs = inputs,
+                    Outputs = new Dictionary<string, string>
                     {
                         ["ResponseCode"] = "step.ResponseCode",
                         ["ResponseBody"] = "step.ResponseBody"

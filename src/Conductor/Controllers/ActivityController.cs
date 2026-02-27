@@ -1,11 +1,8 @@
-using System;
-using System.Threading.Tasks;
-using Conductor.Auth;
+﻿using Conductor.Auth;
 using Conductor.Mappings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WorkflowCore.Interface;
-using PendingActivity = Conductor.Models.PendingActivity;
 
 namespace Conductor.Controllers;
 
@@ -19,7 +16,7 @@ public class ActivityController : ControllerBase
     public ActivityController(IActivityController activityService, IMapper mapper)
     {
         _activityService = activityService;
-        _mapper          = mapper;
+        _mapper = mapper;
     }
 
     [Authorize(Policy = Policies.Worker)]

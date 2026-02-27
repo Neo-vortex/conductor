@@ -1,11 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿namespace Conductor.Domain.Interfaces;
 
-namespace Conductor.Domain.Interfaces
+public interface IClusterBackplane
 {
-    public interface IClusterBackplane
-    {
-        Task Start();
-        Task Stop();
-        void LoadNewDefinition(string id, int version);
-    }
+    Task Start();
+    Task Stop();
+    void LoadNewDefinition(string id, int version);
 }

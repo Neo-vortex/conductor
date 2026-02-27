@@ -1,11 +1,10 @@
-﻿namespace Conductor.Auth
+﻿namespace Conductor.Auth;
+
+public static class Permissions
 {
-    public static class Permissions
-    {
-        public const string Admin = "conductor:admin";
-        public const string Viewer = "conductor:viewer";
-        public const string Controller = "conductor:controller";
-        public const string Author = "conductor:author";
-        public const string Worker = "conductor:worker";
-    }
+    public const string Admin = "conductor:admin";
+    public const string Viewer = "conductor:viewer";
+    public const string Controller = "conductor:controller";
+    public const string Author = "conductor:author";
+    public const string Worker = "conductor:worker";
 }

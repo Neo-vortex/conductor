@@ -1,148 +1,142 @@
-﻿using System;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Conductor.Auth
+namespace Conductor.Auth;
+
+public static class AuthExtensions
 {
-    public static class AuthExtensions
+    public static AuthenticationBuilder AddJwtAuth(this AuthenticationBuilder builder, IConfiguration config)
     {
-        public static AuthenticationBuilder AddJwtAuth(this AuthenticationBuilder builder, IConfiguration config)
+        var signingKey = LoadKey(config);
+
+        builder.AddJwtBearer(options =>
         {
-            var signingKey = LoadKey(config);
+            options.IncludeErrorDetails = true;
+            options.RequireHttpsMetadata = false;
 
-            builder.AddJwtBearer(options =>
+            options.TokenValidationParameters = new TokenValidationParameters
             {
-                options.IncludeErrorDetails = true;
-                options.RequireHttpsMetadata = false;
-
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = signingKey,
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    RequireExpirationTime = false
-                };
-
-                options.Validate();
-            });
-
-            return builder;
-        }
-
-        public static AuthenticationBuilder AddBypassAuth(this AuthenticationBuilder builder)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var securityKey = new SymmetricSecurityKey(new byte[121]);
-            var sc = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim("scope",
-                        $"{Permissions.Admin} {Permissions.Author} {Permissions.Controller} {Permissions.Viewer} {Permissions.Worker}")
-                }),
-                SigningCredentials = sc
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = signingKey,
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                RequireExpirationTime = false
             };
 
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            var tokenString = tokenHandler.WriteToken(token);
+            options.Validate();
+        });
 
-            builder.AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = false,
-                    IssuerSigningKey = securityKey,
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ValidateLifetime = false
-                };
-                options.RequireHttpsMetadata = false;
-                options.Events = new JwtBearerEvents
-                {
-                    OnMessageReceived = context =>
-                    {
-                        context.Token = tokenString;
-                        return Task.CompletedTask;
-                    }
-                };
-                options.Validate();
-            });
+        return builder;
+    }
 
-            return builder;
-        }
+    public static AuthenticationBuilder AddBypassAuth(this AuthenticationBuilder builder)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var securityKey = new SymmetricSecurityKey(new byte[121]);
+        var sc = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-        public static void AddPolicies(this IServiceCollection services)
+        var tokenDescriptor = new SecurityTokenDescriptor
         {
-            services.AddAuthorization(options =>
+            Subject = new ClaimsIdentity(new[]
             {
-                options.AddPolicy(Policies.Admin,
-                    policy => policy.RequireAssertion(context =>
-                        context.User.Claims.Any(x =>
-                            x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Admin))));
-                options.AddPolicy(Policies.Author,
-                    policy => policy.RequireAssertion(context =>
-                        context.User.Claims.Any(x =>
-                            x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Author))));
-                options.AddPolicy(Policies.Controller,
-                    policy => policy.RequireAssertion(context =>
-                        context.User.Claims.Any(x =>
-                            x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Controller))));
-                options.AddPolicy(Policies.Viewer,
-                    policy => policy.RequireAssertion(context =>
-                        context.User.Claims.Any(x =>
-                            x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Viewer))));
-                options.AddPolicy(Policies.Worker,
-                    policy => policy.RequireAssertion(context =>
-                        context.User.Claims.Any(x =>
-                            x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Worker))));
-            });
-        }
+                new Claim("scope",
+                    $"{Permissions.Admin} {Permissions.Author} {Permissions.Controller} {Permissions.Viewer} {Permissions.Worker}")
+            }),
+            SigningCredentials = sc
+        };
 
-        private static SecurityKey LoadKey(IConfiguration config)
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        var tokenString = tokenHandler.WriteToken(token);
+
+        builder.AddJwtBearer(options =>
         {
-            var publicKeyBase64 = EnvironmentVariables.PublicKey;
-            if (string.IsNullOrEmpty(publicKeyBase64))
-                publicKeyBase64 = config.GetSection("Auth").GetValue<string>("PublicKey");
-            var publicKey = Convert.FromBase64String(publicKeyBase64);
-
-            var algName = EnvironmentVariables.Alg;
-            if (string.IsNullOrEmpty(algName))
-                algName = config.GetSection("Auth").GetValue<string>("Algorithm");
-
-            if (algName.StartsWith("RS"))
+            options.TokenValidationParameters = new TokenValidationParameters
             {
-                var rsa = RSA.Create();
-                try
+                ValidateIssuerSigningKey = false,
+                IssuerSigningKey = securityKey,
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ValidateLifetime = false
+            };
+            options.RequireHttpsMetadata = false;
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
                 {
-                    rsa.ImportSubjectPublicKeyInfo(publicKey, out _);
+                    context.Token = tokenString;
+                    return Task.CompletedTask;
                 }
-                catch
-                {
-                    rsa.ImportRSAPublicKey(publicKey, out _);
-                }
+            };
+            options.Validate();
+        });
 
-                return new RsaSecurityKey(rsa);
+        return builder;
+    }
+
+    public static void AddPolicies(this IServiceCollection services)
+    {
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy(Policies.Admin,
+                policy => policy.RequireAssertion(context =>
+                    context.User.Claims.Any(x =>
+                        x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Admin))));
+            options.AddPolicy(Policies.Author,
+                policy => policy.RequireAssertion(context =>
+                    context.User.Claims.Any(x =>
+                        x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Author))));
+            options.AddPolicy(Policies.Controller,
+                policy => policy.RequireAssertion(context =>
+                    context.User.Claims.Any(x =>
+                        x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Controller))));
+            options.AddPolicy(Policies.Viewer,
+                policy => policy.RequireAssertion(context =>
+                    context.User.Claims.Any(x =>
+                        x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Viewer))));
+            options.AddPolicy(Policies.Worker,
+                policy => policy.RequireAssertion(context =>
+                    context.User.Claims.Any(x =>
+                        x.Type == "scope" && x.Value.Split(' ').Contains(Permissions.Worker))));
+        });
+    }
+
+    private static SecurityKey LoadKey(IConfiguration config)
+    {
+        var publicKeyBase64 = EnvironmentVariables.PublicKey;
+        if (string.IsNullOrEmpty(publicKeyBase64))
+            publicKeyBase64 = config.GetSection("Auth").GetValue<string>("PublicKey");
+        var publicKey = Convert.FromBase64String(publicKeyBase64);
+
+        var algName = EnvironmentVariables.Alg;
+        if (string.IsNullOrEmpty(algName))
+            algName = config.GetSection("Auth").GetValue<string>("Algorithm");
+
+        if (algName.StartsWith("RS"))
+        {
+            var rsa = RSA.Create();
+            try
+            {
+                rsa.ImportSubjectPublicKeyInfo(publicKey, out _);
+            }
+            catch
+            {
+                rsa.ImportRSAPublicKey(publicKey, out _);
             }
 
-            if (algName.StartsWith("ES"))
-            {
-                var e1 = ECDsa.Create();
-                e1.ImportSubjectPublicKeyInfo(publicKey, out _);
-                return new ECDsaSecurityKey(e1);
-            }
-
-            throw new ArgumentException("Only RSA and ECDSA algorithms are supported");
+            return new RsaSecurityKey(rsa);
         }
+
+        if (algName.StartsWith("ES"))
+        {
+            var e1 = ECDsa.Create();
+            e1.ImportSubjectPublicKeyInfo(publicKey, out _);
+            return new ECDsaSecurityKey(e1);
+        }
+
+        throw new ArgumentException("Only RSA and ECDSA algorithms are supported");
     }
 }

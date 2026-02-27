@@ -1,8 +1,7 @@
 ﻿using WorkflowCore.Primitives;
 
-namespace Conductor.Steps
+namespace Conductor.Steps;
+
+public class Parallel : Sequence
 {
-    public class Parallel : Sequence
-    {
-    }
 }

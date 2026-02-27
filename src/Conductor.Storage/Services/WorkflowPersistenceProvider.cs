@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
+﻿using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.IdGenerators;
 using MongoDB.Driver;
 using WorkflowCore.Exceptions;
@@ -75,14 +69,23 @@ public class WorkflowPersistenceProvider : IPersistenceProvider
     }
 
     // ── collections ───────────────────────────────────────────────────────
-    private IMongoCollection<WorkflowInstance>  WorkflowInstances  => _database.GetCollection<WorkflowInstance>("Workflows");
-    private IMongoCollection<EventSubscription> EventSubscriptions => _database.GetCollection<EventSubscription>("Subscriptions");
-    private IMongoCollection<Event>             Events             => _database.GetCollection<Event>("Events");
-    private IMongoCollection<ExecutionError>    ExecutionErrors    => _database.GetCollection<ExecutionError>("ExecutionErrors");
-    private IMongoCollection<ScheduledCommand>  ScheduledCommands  => _database.GetCollection<ScheduledCommand>("ScheduledCommands");
+    private IMongoCollection<WorkflowInstance> WorkflowInstances =>
+        _database.GetCollection<WorkflowInstance>("Workflows");
+
+    private IMongoCollection<EventSubscription> EventSubscriptions =>
+        _database.GetCollection<EventSubscription>("Subscriptions");
+
+    private IMongoCollection<Event> Events => _database.GetCollection<Event>("Events");
+
+    private IMongoCollection<ExecutionError> ExecutionErrors =>
+        _database.GetCollection<ExecutionError>("ExecutionErrors");
+
+    private IMongoCollection<ScheduledCommand> ScheduledCommands =>
+        _database.GetCollection<ScheduledCommand>("ScheduledCommands");
 
     // ── IWorkflowRepository ───────────────────────────────────────────────
-    public async Task<string> CreateNewWorkflow(WorkflowInstance workflow, CancellationToken cancellationToken = default)
+    public async Task<string> CreateNewWorkflow(WorkflowInstance workflow,
+        CancellationToken cancellationToken = default)
     {
         await WorkflowInstances.InsertOneAsync(workflow, cancellationToken: cancellationToken);
         return workflow.Id;
@@ -90,10 +93,12 @@ public class WorkflowPersistenceProvider : IPersistenceProvider
 
     public async Task PersistWorkflow(WorkflowInstance workflow, CancellationToken cancellationToken = default)
     {
-        await WorkflowInstances.ReplaceOneAsync(x => x.Id == workflow.Id, workflow, cancellationToken: cancellationToken);
+        await WorkflowInstances.ReplaceOneAsync(x => x.Id == workflow.Id, workflow,
+            cancellationToken: cancellationToken);
     }
 
-    public async Task PersistWorkflow(WorkflowInstance workflow, List<EventSubscription> subscriptions, CancellationToken cancellationToken = default)
+    public async Task PersistWorkflow(WorkflowInstance workflow, List<EventSubscription> subscriptions,
+        CancellationToken cancellationToken = default)
     {
         await PersistWorkflow(workflow, cancellationToken);
 
@@ -101,9 +106,10 @@ public class WorkflowPersistenceProvider : IPersistenceProvider
             await CreateEventSubscription(sub, cancellationToken);
     }
 
-    public async Task<IEnumerable<string>> GetRunnableInstances(DateTime asAt, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<string>> GetRunnableInstances(DateTime asAt,
+        CancellationToken cancellationToken = default)
     {
-        var now   = asAt.ToUniversalTime().Ticks;
+        var now = asAt.ToUniversalTime().Ticks;
         var query = WorkflowInstances
             .Find(x => x.NextExecution.HasValue && x.NextExecution <= now && x.Status == WorkflowStatus.Runnable)
             .Project(x => x.Id);
@@ -120,7 +126,8 @@ public class WorkflowPersistenceProvider : IPersistenceProvider
         return result;
     }
 
-    public async Task<IEnumerable<WorkflowInstance>> GetWorkflowInstances(IEnumerable<string> ids, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<WorkflowInstance>> GetWorkflowInstances(IEnumerable<string> ids,
+        CancellationToken cancellationToken = default)
     {
         if (ids == null) return [];
 
@@ -133,16 +140,17 @@ public class WorkflowPersistenceProvider : IPersistenceProvider
     {
         var query = WorkflowInstances.AsQueryable();
 
-        if (status.HasValue)      query = query.Where(x => x.Status == status.Value);
+        if (status.HasValue) query = query.Where(x => x.Status == status.Value);
         if (!string.IsNullOrEmpty(type)) query = query.Where(x => x.WorkflowDefinitionId == type);
         if (createdFrom.HasValue) query = query.Where(x => x.CreateTime >= createdFrom.Value);
-        if (createdTo.HasValue)   query = query.Where(x => x.CreateTime <= createdTo.Value);
+        if (createdTo.HasValue) query = query.Where(x => x.CreateTime <= createdTo.Value);
 
         return query.Skip(skip).Take(take).ToList();
     }
 
     // ── ISubscriptionRepository ───────────────────────────────────────────
-    public async Task<string> CreateEventSubscription(EventSubscription subscription, CancellationToken cancellationToken = default)
+    public async Task<string> CreateEventSubscription(EventSubscription subscription,
+        CancellationToken cancellationToken = default)
     {
         await EventSubscriptions.InsertOneAsync(subscription, cancellationToken: cancellationToken);
         return subscription.Id;
@@ -162,9 +170,11 @@ public class WorkflowPersistenceProvider : IPersistenceProvider
         return await query.ToListAsync(cancellationToken);
     }
 
-    public async Task<EventSubscription> GetSubscription(string eventSubscriptionId, CancellationToken cancellationToken = default)
+    public async Task<EventSubscription> GetSubscription(string eventSubscriptionId,
+        CancellationToken cancellationToken = default)
     {
-        var cursor = await EventSubscriptions.FindAsync(x => x.Id == eventSubscriptionId, cancellationToken: cancellationToken);
+        var cursor =
+            await EventSubscriptions.FindAsync(x => x.Id == eventSubscriptionId, cancellationToken: cancellationToken);
         return await cursor.FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -173,7 +183,7 @@ public class WorkflowPersistenceProvider : IPersistenceProvider
     {
         var query = EventSubscriptions
             .Find(x => x.EventName == eventName && x.EventKey == eventKey
-                     && x.SubscribeAsOf <= asOf && x.ExternalToken == null);
+                                                && x.SubscribeAsOf <= asOf && x.ExternalToken == null);
 
         return await query.FirstOrDefaultAsync(cancellationToken);
     }
@@ -182,9 +192,9 @@ public class WorkflowPersistenceProvider : IPersistenceProvider
         DateTime expiry, CancellationToken cancellationToken = default)
     {
         var update = Builders<EventSubscription>.Update
-            .Set(x => x.ExternalToken,      token)
+            .Set(x => x.ExternalToken, token)
             .Set(x => x.ExternalTokenExpiry, expiry)
-            .Set(x => x.ExternalWorkerId,    workerId);
+            .Set(x => x.ExternalWorkerId, workerId);
 
         var result = await EventSubscriptions.UpdateOneAsync(
             x => x.Id == eventSubscriptionId && x.ExternalToken == null,
@@ -193,12 +203,13 @@ public class WorkflowPersistenceProvider : IPersistenceProvider
         return result.ModifiedCount > 0;
     }
 
-    public async Task ClearSubscriptionToken(string eventSubscriptionId, string token, CancellationToken cancellationToken = default)
+    public async Task ClearSubscriptionToken(string eventSubscriptionId, string token,
+        CancellationToken cancellationToken = default)
     {
         var update = Builders<EventSubscription>.Update
-            .Set(x => x.ExternalToken,      (string?)null)
-            .Set(x => x.ExternalTokenExpiry, (DateTime?)null)
-            .Set(x => x.ExternalWorkerId,    (string?)null);
+            .Set(x => x.ExternalToken, null)
+            .Set(x => x.ExternalTokenExpiry, null)
+            .Set(x => x.ExternalWorkerId, null);
 
         await EventSubscriptions.UpdateOneAsync(
             x => x.Id == eventSubscriptionId && x.ExternalToken == token,
@@ -218,9 +229,10 @@ public class WorkflowPersistenceProvider : IPersistenceProvider
         return await cursor.FirstAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<string>> GetRunnableEvents(DateTime asAt, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<string>> GetRunnableEvents(DateTime asAt,
+        CancellationToken cancellationToken = default)
     {
-        var now   = asAt.ToUniversalTime();
+        var now = asAt.ToUniversalTime();
         var query = Events
             .Find(x => !x.IsProcessed && x.EventTime <= now)
             .Project(x => x.Id);
@@ -258,7 +270,9 @@ public class WorkflowPersistenceProvider : IPersistenceProvider
             await ExecutionErrors.InsertManyAsync(list, cancellationToken: cancellationToken);
     }
 
-    public void EnsureStoreExists() { }
+    public void EnsureStoreExists()
+    {
+    }
 
     // ── IScheduledCommandRepository ───────────────────────────────────────
     public bool SupportsScheduledCommands => true;

@@ -1,12 +1,10 @@
-﻿using System.Collections.Generic;
-using Conductor.Domain.Models;
+﻿using Conductor.Domain.Models;
 
-namespace Conductor.Domain.Interfaces
+namespace Conductor.Domain.Interfaces;
+
+public interface IScriptEngineHost
 {
-    public interface IScriptEngineHost
-    {
-        void Execute(Resource resource, IDictionary<string, object> inputs);
-        dynamic EvaluateExpression(string expression, IDictionary<string, object> inputs);
-        T EvaluateExpression<T>(string expression, IDictionary<string, object> inputs);
-    }
+    void Execute(Resource resource, IDictionary<string, object> inputs);
+    dynamic EvaluateExpression(string expression, IDictionary<string, object> inputs);
+    T EvaluateExpression<T>(string expression, IDictionary<string, object> inputs);
 }

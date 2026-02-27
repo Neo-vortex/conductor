@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
+﻿using System.Dynamic;
 using System.Net;
-using System.Threading.Tasks;
 using Conductor.Domain.Models;
 using Conductor.Models;
 using FluentAssertions;
@@ -14,7 +11,9 @@ namespace Conductor.IntegrationTests.Scenarios;
 [Collection("Conductor")]
 public class DecisionScenario : Scenario
 {
-    public DecisionScenario(Setup setup) : base(setup) { }
+    public DecisionScenario(Setup setup) : base(setup)
+    {
+    }
 
     [Fact]
     public async Task Scenario()
@@ -34,8 +33,8 @@ public class DecisionScenario : Scenario
             {
                 new()
                 {
-                    Id             = "Decide",
-                    StepType       = "Decide",
+                    Id = "Decide",
+                    StepType = "Decide",
                     SelectNextStep = new Dictionary<string, string>
                     {
                         ["A"] = "data.Flag == 1",
@@ -44,17 +43,17 @@ public class DecisionScenario : Scenario
                 },
                 new()
                 {
-                    Id       = "A",
+                    Id = "A",
                     StepType = "AddTest",
-                    Inputs   = add1inputs,
-                    Outputs  = new Dictionary<string, string> { ["Result"] = "step.Result" }
+                    Inputs = add1inputs,
+                    Outputs = new Dictionary<string, string> { ["Result"] = "step.Result" }
                 },
                 new()
                 {
-                    Id       = "B",
+                    Id = "B",
                     StepType = "AddTest",
-                    Inputs   = add2inputs,
-                    Outputs  = new Dictionary<string, string> { ["Result"] = "step.Result" }
+                    Inputs = add2inputs,
+                    Outputs = new Dictionary<string, string> { ["Result"] = "step.Result" }
                 }
             }
         };
@@ -63,10 +62,12 @@ public class DecisionScenario : Scenario
         registerResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
         await Task.Delay(1000);
 
-        var (startResponse1, startData1) = await PostJsonAsync<WorkflowInstance>($"/workflow/{definition.Id}", new { Value1 = 2, Value2 = 3, Value3 = 4, Flag = 1 });
+        var (startResponse1, startData1) = await PostJsonAsync<WorkflowInstance>($"/workflow/{definition.Id}",
+            new { Value1 = 2, Value2 = 3, Value3 = 4, Flag = 1 });
         startResponse1.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var (startResponse2, startData2) = await PostJsonAsync<WorkflowInstance>($"/workflow/{definition.Id}", new { Value1 = 2, Value2 = 3, Value3 = 4, Flag = 0 });
+        var (startResponse2, startData2) = await PostJsonAsync<WorkflowInstance>($"/workflow/{definition.Id}",
+            new { Value1 = 2, Value2 = 3, Value3 = 4, Flag = 0 });
         startResponse2.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var instance1 = await WaitForComplete(startData1!.WorkflowId);

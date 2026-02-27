@@ -1,8 +1,4 @@
-﻿using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Text;
 using Conductor.Models;
 using Newtonsoft.Json;
 
@@ -20,13 +16,13 @@ public abstract class Scenario
     protected async Task<T?> GetAsync<T>(string path)
     {
         var response = await _client.GetAsync(path);
-        var json     = await response.Content.ReadAsStringAsync();
+        var json = await response.Content.ReadAsStringAsync();
         return JsonConvert.DeserializeObject<T>(json);
     }
 
     protected async Task<HttpResponseMessage> PostJsonAsync(string path, object body)
     {
-        var json    = JsonConvert.SerializeObject(body);
+        var json = JsonConvert.SerializeObject(body);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
         return await _client.PostAsync(path, content);
     }
@@ -34,8 +30,8 @@ public abstract class Scenario
     protected async Task<(HttpResponseMessage Response, T? Data)> PostJsonAsync<T>(string path, object body)
     {
         var response = await PostJsonAsync(path, body);
-        var json     = await response.Content.ReadAsStringAsync();
-        var data     = JsonConvert.DeserializeObject<T>(json);
+        var json = await response.Content.ReadAsStringAsync();
+        var data = JsonConvert.DeserializeObject<T>(json);
         return (response, data);
     }
 

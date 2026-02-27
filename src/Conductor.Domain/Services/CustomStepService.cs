@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using Conductor.Domain.Interfaces;
+﻿using Conductor.Domain.Interfaces;
 using Conductor.Domain.Models;
 
 namespace Conductor.Domain.Services;
@@ -15,7 +13,7 @@ public class CustomStepService : ICustomStepService
     public CustomStepService(IResourceRepository resourceRepository, IScriptEngineHost scriptHost)
     {
         _resourceRepository = resourceRepository;
-        _scriptHost         = scriptHost;
+        _scriptHost = scriptHost;
     }
 
     public void SaveStepResource(Resource resource)
