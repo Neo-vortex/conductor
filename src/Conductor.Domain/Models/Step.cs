@@ -1,17 +1,19 @@
-﻿using System.Dynamic;
+﻿using System;
+using System.Collections.Generic;
+using System.Dynamic;
 using WorkflowCore.Models;
 
 namespace Conductor.Domain.Models;
 
 public class Step
 {
-    public string StepType { get; set; }
+    public string StepType { get; set; } = string.Empty;
 
-    public string Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
-    public string CancelCondition { get; set; }
+    public string? CancelCondition { get; set; }
 
     public WorkflowErrorHandling? ErrorBehavior { get; set; }
 
@@ -23,7 +25,7 @@ public class Step
 
     public bool Saga { get; set; } = false;
 
-    public string NextStepId { get; set; }
+    public string? NextStepId { get; set; }
 
     public ExpandoObject Inputs { get; set; } = new();
 

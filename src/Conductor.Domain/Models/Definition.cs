@@ -1,16 +1,16 @@
-﻿using WorkflowCore.Models;
+﻿using System;
+using System.Collections.Generic;
+using WorkflowCore.Models;
 
 namespace Conductor.Domain.Models;
 
 public class Definition
 {
-    public string Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     public int Version { get; set; }
 
-    public string Description { get; set; }
-
-    //public string DataType { get; set; }
+    public string? Description { get; set; }
 
     public WorkflowErrorHandling DefaultErrorBehavior { get; set; }
 
