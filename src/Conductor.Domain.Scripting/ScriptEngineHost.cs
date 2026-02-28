@@ -1,5 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.Concurrent;
-using System.Dynamic;
+using System.Threading.Tasks;
 using Conductor.Domain.Interfaces;
 using Conductor.Domain.Models;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
@@ -9,18 +11,26 @@ using Microsoft.Extensions.Logging;
 namespace Conductor.Domain.Scripting;
 
 /// <summary>
-///     Roslyn-based script engine host. Replaces IronPython.
-///     Expression language:  C# expressions, e.g.  data.amount * 1.1
-///     Script language:      C# statements,  e.g.  result = input + 1;
-///     Available globals in expressions/scripts:
-///     data        – the workflow data object (dynamic ExpandoObject)
-///     context     – IStepExecutionContext (expressions only)
-///     environment – IDictionary of env vars
-///     step        – the step body (output scripts only)
-///     outcome     – outcome object (outcome expressions only)
+/// Roslyn-based script engine host. Replaces IronPython.
+///
+/// Expression language:  C# expressions, e.g.  data.amount * 1.1
+/// Script language:      C# statements,  e.g.  result = input + 1;
+///
+/// Available globals in expressions/scripts:
+///   data        – the workflow data object (dynamic ExpandoObject)
+///   context     – IStepExecutionContext (expressions only)
+///   environment – IDictionary of env vars
+///   step        – the step body (output scripts only)
+///   outcome     – outcome object (outcome expressions only)
 /// </summary>
 public class ScriptEngineHost : IScriptEngineHost
 {
+    private readonly ILogger<ScriptEngineHost> _logger;
+
+    // Cache compiled scripts keyed by source text to avoid recompiling on every step execution
+    private readonly ConcurrentDictionary<string, Script<object>> _expressionCache = new();
+    private readonly ConcurrentDictionary<string, Script>         _statementCache  = new();
+
     private static readonly ScriptOptions DefaultOptions = ScriptOptions.Default
         .WithImports(
             "System",
@@ -28,21 +38,17 @@ public class ScriptEngineHost : IScriptEngineHost
             "System.Collections.Generic",
             "System.Dynamic")
         .WithReferences(
-            typeof(object).Assembly,
-            typeof(Enumerable).Assembly,
-            typeof(ExpandoObject).Assembly);
-
-    // Cache compiled scripts keyed by source text to avoid recompiling on every step execution
-    private readonly ConcurrentDictionary<string, Script<object>> _expressionCache = new();
-    private readonly ILogger<ScriptEngineHost> _logger;
-    private readonly ConcurrentDictionary<string, Script> _statementCache = new();
+            typeof(object).Assembly,                            // mscorlib / System.Private.CoreLib
+            typeof(Enumerable).Assembly,                        // System.Linq
+            typeof(System.Dynamic.ExpandoObject).Assembly,      // System.Dynamic.Runtime
+            typeof(Microsoft.CSharp.RuntimeBinder.Binder).Assembly); // Microsoft.CSharp — required for dynamic
 
     public ScriptEngineHost(ILogger<ScriptEngineHost> logger)
     {
         _logger = logger;
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public void Execute(Resource resource, IDictionary<string, object> inputs)
     {
         if (resource.ContentType != "text/x-csharp")
@@ -70,7 +76,7 @@ public class ScriptEngineHost : IScriptEngineHost
         }
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public dynamic EvaluateExpression(string expression, IDictionary<string, object> inputs)
     {
         var globals = new ScriptGlobals(inputs);
@@ -94,7 +100,7 @@ public class ScriptEngineHost : IScriptEngineHost
         }
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public T EvaluateExpression<T>(string expression, IDictionary<string, object> inputs)
     {
         var result = EvaluateExpression(expression, inputs);

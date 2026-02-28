@@ -48,17 +48,12 @@ public class DefinitionRepository : IDefinitionRepository
 
     public IEnumerable<Definition> GetAll()
     {
-        // Return only the latest version of each definition
-        var results = _collection.AsQueryable()
+        return _collection.AsQueryable()
             .ToList()
             .GroupBy(x => x.ExternalId)
-            .Select(g => g.OrderByDescending(x => x.Version).First().Definition);
-
-        foreach (var item in results)
-        {
-            var json = item.ToJson();
-            yield return JsonConvert.DeserializeObject<Definition>(json);
-        }
+            .Select(g => g.OrderByDescending(x => x.Version).First().Definition)
+            .Select(doc => JsonConvert.DeserializeObject<Definition>(doc.ToJson()))
+            .ToList();
     }
 
     public void Save(Definition definition)

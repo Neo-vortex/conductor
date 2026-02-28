@@ -61,11 +61,15 @@ public class WorkflowPersistenceProvider : IPersistenceProvider
             x.MapProperty(y => y.IsProcessed);
         });
 
-        BsonClassMap.RegisterClassMap<ScheduledCommand>(x => x.AutoMap());
-        BsonClassMap.RegisterClassMap<ControlPersistenceData>(x => x.AutoMap());
-        BsonClassMap.RegisterClassMap<SchedulePersistenceData>(x => x.AutoMap());
-        BsonClassMap.RegisterClassMap<ExecutionPointer>(x => x.AutoMap());
-        BsonClassMap.RegisterClassMap<ActivityResult>(x => x.AutoMap());
+        BsonClassMap.RegisterClassMap<ScheduledCommand>(x =>
+        {
+            x.AutoMap();
+            x.SetIgnoreExtraElements(true);
+        });
+        BsonClassMap.RegisterClassMap<ControlPersistenceData>(x => { x.AutoMap(); x.SetIgnoreExtraElements(true); });
+        BsonClassMap.RegisterClassMap<SchedulePersistenceData>(x => { x.AutoMap(); x.SetIgnoreExtraElements(true); });
+        BsonClassMap.RegisterClassMap<ExecutionPointer>(x => { x.AutoMap(); x.SetIgnoreExtraElements(true); });
+        BsonClassMap.RegisterClassMap<ActivityResult>(x => { x.AutoMap(); x.SetIgnoreExtraElements(true); });
     }
 
     public WorkflowPersistenceProvider(IMongoDatabase database)
