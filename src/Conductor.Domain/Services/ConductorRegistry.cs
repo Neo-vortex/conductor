@@ -1,21 +1,28 @@
-﻿using WorkflowCore.Interface;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using WorkflowCore.Interface;
 using WorkflowCore.Models;
+using WorkflowCore.Services;
 
 namespace Conductor.Domain.Services;
 
 public class ConductorRegistry : IWorkflowRegistry
 {
-    private readonly List<(string WorkflowId, int Version, WorkflowDefinition WorkflowDefinition)> _registry =
-        new List<(string workflowId, int version, WorkflowDefinition workflowDefinition)>();
+    private readonly List<(string WorkflowId, int Version, WorkflowDefinition WorkflowDefinition)> _registry = new();
+
+    public void RegisterWorkflow(WorkflowDefinition definition)
+    {
+        if (_registry.Any(x => x.WorkflowId == definition.Id && x.Version == definition.Version))
+            throw new InvalidOperationException(
+                $"Workflow {definition.Id} version {definition.Version} is already registered");
+
+        _registry.Add((definition.Id, definition.Version, definition));
+    }
 
     public void DeregisterWorkflow(string workflowId, int version)
     {
-        throw new NotImplementedException();
-    }
-
-    public IEnumerable<WorkflowDefinition> GetAllDefinitions()
-    {
-        throw new NotImplementedException();
+        _registry.RemoveAll(x => x.WorkflowId == workflowId && x.Version == version);
     }
 
     public WorkflowDefinition GetDefinition(string workflowId, int? version = null)
@@ -25,36 +32,38 @@ public class ConductorRegistry : IWorkflowRegistry
             var entry = _registry.FirstOrDefault(x => x.WorkflowId == workflowId && x.Version == version.Value);
             return entry.WorkflowDefinition;
         }
-        else
-        {
-            var entry = _registry.Where(x => x.WorkflowId == workflowId).OrderByDescending(x => x.Version)
-                .FirstOrDefault();
-            return entry.WorkflowDefinition;
-        }
+
+        var latest = _registry
+            .Where(x => x.WorkflowId == workflowId)
+            .OrderByDescending(x => x.Version)
+            .FirstOrDefault();
+
+        return latest.WorkflowDefinition;
+    }
+
+    public IEnumerable<WorkflowDefinition> GetAllDefinitions()
+    {
+        return _registry.Select(x => x.WorkflowDefinition);
     }
 
     public bool IsRegistered(string workflowId, int version)
     {
-        throw new NotImplementedException();
-    }
-
-    public void RegisterWorkflow(WorkflowDefinition definition)
-    {
-        if (_registry.Any(x => x.Item1 == definition.Id && x.Item2 == definition.Version))
-            throw new InvalidOperationException(
-                $"Workflow {definition.Id} version {definition.Version} is already registered");
-
-        _registry.Add((definition.Id, definition.Version, definition));
+        return _registry.Any(x => x.WorkflowId == workflowId && x.Version == version);
     }
 
     public void RegisterWorkflow(IWorkflow workflow)
     {
-        throw new NotImplementedException();
+        var builder = new WorkflowBuilder<object>([]);
+        workflow.Build(builder);
+        var definition = builder.Build(workflow.Id, workflow.Version);
+        RegisterWorkflow(definition);
     }
 
-    public void RegisterWorkflow<TData>(IWorkflow<TData> workflow)
-        where TData : new()
+    public void RegisterWorkflow<TData>(IWorkflow<TData> workflow) where TData : new()
     {
-        throw new NotImplementedException();
+        var builder = new WorkflowBuilder<TData>([]);
+        workflow.Build(builder);
+        var definition = builder.Build(workflow.Id, workflow.Version);
+        RegisterWorkflow(definition);
     }
 }

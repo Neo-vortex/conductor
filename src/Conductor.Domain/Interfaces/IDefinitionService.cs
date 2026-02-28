@@ -1,4 +1,5 @@
-﻿using Conductor.Domain.Models;
+﻿using System.Collections.Generic;
+using Conductor.Domain.Models;
 
 namespace Conductor.Domain.Interfaces;
 
@@ -8,4 +9,6 @@ public interface IDefinitionService
     void RegisterNewDefinition(Definition definition);
     void ReplaceVersion(Definition definition);
     Definition GetDefinition(string id);
+    IEnumerable<Definition> GetAllDefinitions();
+    void DeleteDefinition(string id);
 }

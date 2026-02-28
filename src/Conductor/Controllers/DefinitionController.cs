@@ -1,4 +1,5 @@
-﻿using Conductor.Auth;
+﻿using System.Collections.Generic;
+using Conductor.Auth;
 using Conductor.Domain.Interfaces;
 using Conductor.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -19,9 +20,12 @@ public class DefinitionController : ControllerBase
 
     [HttpGet]
     [Authorize(Policy = Policies.Author)]
-    public ActionResult<IEnumerable<string>> Get()
+    public ActionResult<IEnumerable<Definition>> Get()
     {
-        return new[] { "value1", "value2" };
+        // GetDefinition only fetches by id — expose the full known IDs via the registry
+        // For now return a list by scanning the repository through the service
+        // (extend IDefinitionService with GetAll() if you need pagination later)
+        return Ok(_service.GetAllDefinitions());
     }
 
     [HttpGet("{id}")]
@@ -29,7 +33,6 @@ public class DefinitionController : ControllerBase
     public ActionResult<Definition> Get(string id)
     {
         var result = _service.GetDefinition(id);
-
         if (result == null)
             return NotFound();
 
@@ -38,22 +41,34 @@ public class DefinitionController : ControllerBase
 
     [HttpPost]
     [Authorize(Policy = Policies.Author)]
-    public void Post([FromBody] Definition value)
+    public IActionResult Post([FromBody] Definition value)
     {
         _service.RegisterNewDefinition(value);
-        Response.StatusCode = 204;
+        return NoContent();
     }
 
-    //[HttpPut]
-    //public void Put([FromBody] string value)
-    //{
-    //    _service.RegisterNewDefinition(value);
-    //}
+    [HttpPut]
+    [Authorize(Policy = Policies.Author)]
+    public IActionResult Put([FromBody] Definition value)
+    {
+        var existing = _service.GetDefinition(value.Id);
+        if (existing == null)
+            return NotFound();
 
-    // DELETE api/values/5
+        value.Version = existing.Version;
+        _service.ReplaceVersion(value);
+        return NoContent();
+    }
+
     [HttpDelete("{id}")]
     [Authorize(Policy = Policies.Author)]
-    public void Delete(int id)
+    public IActionResult Delete(string id)
     {
+        var existing = _service.GetDefinition(id);
+        if (existing == null)
+            return NotFound();
+
+        _service.DeleteDefinition(id);
+        return NoContent();
     }
 }

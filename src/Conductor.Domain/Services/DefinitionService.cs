@@ -1,4 +1,5 @@
-﻿using Conductor.Domain.Interfaces;
+﻿using System;
+using Conductor.Domain.Interfaces;
 using Conductor.Domain.Models;
 using Microsoft.Extensions.Logging;
 
@@ -9,16 +10,17 @@ public class DefinitionService : IDefinitionService
     private readonly IClusterBackplane _backplane;
     private readonly IWorkflowLoader _loader;
     private readonly ILogger _logger;
-
     private readonly IDefinitionRepository _repository;
+    private readonly WorkflowCore.Interface.IWorkflowRegistry _registry;
 
     public DefinitionService(IDefinitionRepository repository, IWorkflowLoader loader, IClusterBackplane backplane,
-        ILoggerFactory loggerFactory)
+        WorkflowCore.Interface.IWorkflowRegistry registry, ILoggerFactory loggerFactory)
     {
         _repository = repository;
-        _loader = loader;
-        _backplane = backplane;
-        _logger = loggerFactory.CreateLogger(GetType());
+        _loader     = loader;
+        _backplane  = backplane;
+        _registry   = registry;
+        _logger     = loggerFactory.CreateLogger(GetType());
     }
 
     public void LoadDefinitionsFromStorage()
@@ -30,7 +32,7 @@ public class DefinitionService : IDefinitionService
             }
             catch (Exception ex)
             {
-                _logger.LogError(default, ex, $"Error loading definition {definition.Id}");
+                _logger.LogError(ex, "Error loading definition {DefinitionId}", definition.Id);
             }
     }
 
@@ -45,7 +47,28 @@ public class DefinitionService : IDefinitionService
 
     public void ReplaceVersion(Definition definition)
     {
-        throw new NotImplementedException();
+        // Deregister the existing in-memory version so WorkflowCore allows re-registration
+        if (_registry.IsRegistered(definition.Id, definition.Version))
+            _registry.DeregisterWorkflow(definition.Id, definition.Version);
+
+        // Re-register with WorkflowCore and persist to storage
+        _loader.LoadDefinition(definition);
+        _repository.Save(definition);
+        _backplane.LoadNewDefinition(definition.Id, definition.Version);
+    }
+
+    public IEnumerable<Definition> GetAllDefinitions()
+    {
+        return _repository.GetAll();
+    }
+
+    public void DeleteDefinition(string id)
+    {
+        var latest = _repository.Find(id);
+        if (latest != null)
+            _registry.DeregisterWorkflow(id, latest.Version);
+
+        _repository.Delete(id);
     }
 
     public Definition GetDefinition(string id)
