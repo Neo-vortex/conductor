@@ -1,77 +1,62 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
+﻿using System.Dynamic;
 using System.Net;
-using FluentAssertions;
-using System.Threading;
-using System.Threading.Tasks;
 using Conductor.Domain.Models;
 using Conductor.Models;
+using FluentAssertions;
 using Newtonsoft.Json.Linq;
-using RestSharp;
 using Xunit;
 
-namespace Conductor.IntegrationTests.Scenarios
+namespace Conductor.IntegrationTests.Scenarios;
+
+[Collection("Conductor")]
+public class ActivityScenario : Scenario
 {
-    [Collection("Conductor")]
-    public class ActivityScenario : Scenario
+    public ActivityScenario(Setup setup) : base(setup)
     {
+    }
 
-        public ActivityScenario(Setup setup) : base(setup)
+    [Fact]
+    public async Task Scenario()
+    {
+        dynamic inputs = new ExpandoObject();
+        inputs.ActivityName = "'act1'";
+        inputs.Parameters = "data";
+
+        var definition = new Definition
         {
-        }
-
-        [Fact]
-        public async void Scenario()
-        {
-            dynamic inputs = new ExpandoObject();
-            inputs.ActivityName = "'act1'";
-            inputs.Parameters = "data";
-
-            var definition = new Definition()
+            Id = Guid.NewGuid().ToString(),
+            Steps = new List<Step>
             {
-                Id = Guid.NewGuid().ToString(),
-                Steps = new List<Step>()
+                new()
                 {
-                    new Step()
-                    {
-                        Id = "step1",
-                        StepType = "Activity",
-                        Inputs = inputs,
-                        Outputs = new Dictionary<string, string>()
-                        {
-                            ["Result"] = "step.Result"
-                        }
-                    }
+                    Id = "step1",
+                    StepType = "Activity",
+                    Inputs = inputs,
+                    Outputs = new Dictionary<string, string> { ["Result"] = "step.Result" }
                 }
-            };
-            
-            var registerRequest = new RestRequest(@"/definition", Method.POST);
-            registerRequest.AddJsonBody(definition);
-            var registerResponse = _client.Execute(registerRequest);
-            registerResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
-            Thread.Sleep(1000);
+            }
+        };
 
-            var startRequest = new RestRequest($"/workflow/{definition.Id}", Method.POST);
-            startRequest.AddJsonBody(new { Value1 = 2, Value2 = 3 });
-            var startResponse = _client.Execute<WorkflowInstance>(startRequest);
-            startResponse.StatusCode.Should().Be(HttpStatusCode.Created);
-            
-            var activityRequest = new RestRequest($"/activity/act1?timeout=10", Method.GET);
-            var activityResponse = _client.Execute<PendingActivity>(activityRequest);
-            activityResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-            var activityInput = JObject.FromObject(activityResponse.Data.Parameters);
-            var actResult = activityInput["Value1"].Value<int>() + activityInput["Value2"].Value<int>();
+        var registerResponse = await PostJsonAsync("/definition", definition);
+        registerResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        await Task.Delay(1000);
 
-            var activitySuccessRequest = new RestRequest($"/activity/success/{activityResponse.Data.Token}", Method.POST);
-            activitySuccessRequest.AddJsonBody(actResult);
-            var activitySuccessResponse = _client.Execute(activitySuccessRequest);
-            activitySuccessResponse.StatusCode.Should().Be(HttpStatusCode.Accepted);
-            
-            var instance = await WaitForComplete(startResponse.Data.WorkflowId);
-            instance.Status.Should().Be("Complete");
-            var data = JObject.FromObject(instance.Data);
-            data["Result"].Value<int>().Should().Be(5);
-        }
+        var (startResponse, startData) =
+            await PostJsonAsync<WorkflowInstance>($"/workflow/{definition.Id}", new { Value1 = 2, Value2 = 3 });
+        startResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var activity = await GetAsync<PendingActivity>("/activity/act1?timeout=10");
+        activity.Should().NotBeNull();
+
+        var activityInput = JObject.FromObject(activity!.Parameters!);
+        // Box to object so the JSON serialiser treats it as a value, not a generic type param
+        object actResult = activityInput["Value1"]!.Value<int>() + activityInput["Value2"]!.Value<int>();
+
+        var successResponse = await PostJsonAsync($"/activity/success/{activity.Token}", actResult);
+        successResponse.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var instance = await WaitForComplete(startData!.WorkflowId);
+        instance!.Status.Should().Be("Complete");
+        JObject.FromObject(instance.Data!)["Result"]!.Value<int>().Should().Be(5);
     }
 }

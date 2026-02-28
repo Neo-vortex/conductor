@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Xunit;
+﻿using Xunit;
 
-namespace Conductor.IntegrationTests
+namespace Conductor.IntegrationTests;
+
+[CollectionDefinition("Conductor")]
+public class IntegrationCollection : ICollectionFixture<Setup>
 {
-    [CollectionDefinition("Conductor")]
-    public class IntegrationCollection : ICollectionFixture<Setup>
-    {
-    }
 }

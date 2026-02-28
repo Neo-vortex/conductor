@@ -4,10 +4,10 @@ services:
     build:
       context: ../../
     ports:
-    - "5101:80"
+      - "5101:80"
     links:
-    - mongo
-    - redis
+      - mongo
+      - redis
     environment:
       dbhost: mongodb://mongo:27017/
       redis: redis:6379
@@ -15,10 +15,10 @@ services:
     build:
       context: ../../
     ports:
-    - "5102:80"
+      - "5102:80"
     links:
-    - mongo
-    - redis
+      - mongo
+      - redis
     environment:
       dbhost: mongodb://mongo:27017/
       redis: redis:6379

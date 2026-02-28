@@ -1,16 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="RestSharp" Version="106.12.0" />
-    <PackageReference Include="WorkflowCore" Version="3.2.2" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="WorkflowCore" Version="3.17.0"/>
+        <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.3"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Conductor.Domain\Conductor.Domain.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Conductor.Domain\Conductor.Domain.csproj"/>
+    </ItemGroup>
 
 </Project>

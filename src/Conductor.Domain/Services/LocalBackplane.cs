@@ -1,19 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using Conductor.Domain.Interfaces;
+﻿using Conductor.Domain.Interfaces;
 
-namespace Conductor.Domain.Services
+namespace Conductor.Domain.Services;
+
+public class LocalBackplane : IClusterBackplane
 {
-    public class LocalBackplane : IClusterBackplane
+    public Task Start()
     {
-        public Task Start() => Task.CompletedTask;
+        return Task.CompletedTask;
+    }
 
-        public Task Stop() => Task.CompletedTask;
+    public Task Stop()
+    {
+        return Task.CompletedTask;
+    }
 
-        public void LoadNewDefinition(string id, int version)
-        {
-        }
+    public void LoadNewDefinition(string id, int version)
+    {
     }
 }

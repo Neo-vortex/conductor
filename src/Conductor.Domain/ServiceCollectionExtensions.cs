@@ -1,19 +1,17 @@
-﻿using System;
-using Conductor.Domain.Interfaces;
+﻿using Conductor.Domain.Interfaces;
 using Conductor.Domain.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Conductor.Domain
+namespace Conductor.Domain;
+
+public static class ServiceCollectionExtensions
 {
-    public static class ServiceCollectionExtensions
+    public static void ConfigureDomainServices(this IServiceCollection services)
     {
-        public static void ConfigureDomainServices(this IServiceCollection services)
-        {
-            services.AddSingleton<IDefinitionService, DefinitionService>();
-            services.AddSingleton<IWorkflowLoader, WorkflowLoader>();
-            services.AddSingleton<ICustomStepService, CustomStepService>();
-            services.AddSingleton<IExpressionEvaluator, ExpressionEvaluator>();
-            services.AddTransient<CustomStep>();
-        }
+        services.AddSingleton<IDefinitionService, DefinitionService>();
+        services.AddSingleton<IWorkflowLoader, WorkflowLoader>();
+        services.AddSingleton<ICustomStepService, CustomStepService>();
+        services.AddSingleton<IExpressionEvaluator, ExpressionEvaluator>();
+        services.AddTransient<CustomStep>();
     }
 }

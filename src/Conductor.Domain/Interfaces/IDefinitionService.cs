@@ -1,15 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using Conductor.Domain.Models;
 
-namespace Conductor.Domain.Interfaces
+namespace Conductor.Domain.Interfaces;
+
+public interface IDefinitionService
 {
-    public interface IDefinitionService
-    {
-        void LoadDefinitionsFromStorage();
-        void RegisterNewDefinition(Definition definition);
-        void ReplaceVersion(Definition definition);
-        Definition GetDefinition(string id);
-    }
+    void LoadDefinitionsFromStorage();
+    void RegisterNewDefinition(Definition definition);
+    void ReplaceVersion(Definition definition);
+    Definition GetDefinition(string id);
+    IEnumerable<Definition> GetAllDefinitions();
+    void DeleteDefinition(string id);
 }
